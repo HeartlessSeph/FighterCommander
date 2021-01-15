@@ -406,7 +406,7 @@ else:
 	newfile.write(b'\x43\x46\x43\x49\x21\x00\x00\x00\x10\x00\x00\x00\x00\x00\x00\x00')#Writes header with filesize filler
 	
 	for f in os.listdir(kfile):#Loops through all Json files and collects string data
-		curfile = curdir + "\\" + workdir + "\\" + f
+		curfile = workdir + "\\" + f
 		with open(curfile, 'r', encoding='utf8') as file:
 			jsonfile = json.load(file)
 			
@@ -454,7 +454,7 @@ else:
 	#Parsing data from the jsons into Fighter_Command begins here.
 	CommandSetPointerList = []
 	for f in os.listdir(kfile):#Loops through all Json files and collects data.
-		curfile = curdir + "\\" + workdir + "\\" + f
+		curfile = workdir + "\\" + f
 		with open(curfile, 'r', encoding='utf8') as file:
 			jsonfile = json.load(file)
 			MovePointers = []
@@ -648,12 +648,12 @@ else:
 				x = x + 1
 				
 			WeaponSetPointers = []
-			WeaponPropertyPointers = []
-			WeaponPropertyArray = []
 			WeaponMovesetListPointer = 0
 			if "Weapon Moveset Table" in jsonfile[commandsetname]:
 				for weaponset in list(jsonfile[commandsetname]["Weapon Moveset Table"].keys()):
-					numweapons = 0
+					WeaponPropertyArray = []
+					WeaponPropertyPointers = []
+					numwepprops = len(jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"])
 					WeaponCommand = jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Command Set ID for Weapon Moveset"]
 					for weaponprops in list(jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"].keys()):
 						propshort1 = jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"][weaponprops]["Short Property 1"]
@@ -663,9 +663,8 @@ else:
 						temparray3 = []
 						temparray3.append([propshort1,propshort2,propshort3,propshort4])
 						WeaponPropertyArray.append(temparray3)
-						numweapons = numweapons + 1
 					x = 0
-					while x < numweapons:
+					while x < numwepprops:
 						y = 0
 						while y < len(WeaponPropertyArray[x]):
 							WeaponPropertyPointers.append(newfile.tell())
