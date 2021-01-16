@@ -559,7 +559,10 @@ else:
 							newfile.write(int_to_bytes(FollowUpPropValues[x][y][0], 4))
 							newfile.write(b'\x00\x00\x00\x00')
 						else:
-							newfile.write(int_to_bytes(FollowUpPropValues[x][y][1], 4))
+							newfile.write(int_to_bytes(FollowUpPropValues[x][y][1], 1))
+							newfile.write(int_to_bytes(FollowUpPropValues[x][y][2], 1))
+							newfile.write(int_to_bytes(FollowUpPropValues[x][y][3], 1))
+							newfile.write(int_to_bytes(FollowUpPropValues[x][y][4], 1))
 							newfile.write(b'\x00\x00\x00\x00')
 							newfile.write(int_to_bytes(FollowUpPropValues[x][y][0], 4))
 							newfile.write(b'\x00\x00\x00\x00')
