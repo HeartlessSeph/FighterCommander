@@ -266,6 +266,8 @@ if filecheck == True:
 				CommandSetDictionary[(setname)]["Move Table"][movename]["Animation Related Byte 8"] = animbyte8
 			elif movetype == 3:
 				CommandSetDictionary[(setname)]["Move Table"][movename]["No Anim? Equal to FF FF FF FF"] = -1
+			elif movetype == 17:
+				useless = "useless"
 			else:
 				AnimName = GetStringFromPointer(f, AnimPointer)
 				CommandSetDictionary[(setname)]["Move Table"][movename]["Animation Used"] = AnimName
@@ -532,6 +534,9 @@ else:
 				elif movetype == 3:
 					animvalue = -1
 					AnimationValues.append([animvalue,"Useless"])
+				elif movetype == 17:
+					animvalue = -1
+					AnimationValues.append([animvalue,"Useless"])
 				elif movetype == 4:
 					byte1 = jsonfile[commandsetname]["Move Table"][movename]["Animation Related Byte 1"]
 					byte2 = jsonfile[commandsetname]["Move Table"][movename]["Animation Related Byte 2"]
@@ -623,6 +628,8 @@ else:
 				elif movetype == 3:
 					newfile.write(int_to_bytes(AnimationValues[0][0], 4))
 					newfile.write(b'\x00\x00\x00\x00')
+				elif movetype == 17:
+					newfile.write(b'\x00\x00\x00\x00\x00\x00\x00\x00')
 				elif movetype == 4:
 					newfile.write(int_to_bytes(AnimationValues[0][0], 1))
 					newfile.write(int_to_bytes(AnimationValues[0][1], 1))
