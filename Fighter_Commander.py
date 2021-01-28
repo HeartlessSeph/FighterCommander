@@ -14,9 +14,9 @@ from collections import defaultdict
 
 
 print ('''
-   +-------------------------+
-   |     FIGHTER  COMMANDER     |
-   +-------------------------+\n
+   +------------------------+
+   |   FIGHTER  COMMANDER   |
+   +------------------------+\n
    TEST VERSION - EXPECT ERRORS\n''')
 
 if (len(sys.argv) <= 1):
@@ -370,7 +370,7 @@ if filecheck == True:
 				f.seek(4, 1)
 				wepshort3 = int.from_bytes(f.read(2),"little")
 				wepshort4 = int.from_bytes(f.read(2),"little")
-				CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"]["Property " + str(c)]["Short Property 1"] = wepshort1
+				CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"]["Property " + str(c)]["Weapon Category ID"] = wepshort1
 				CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"]["Property " + str(c)]["Short Property 2"] = wepshort2
 				CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"]["Property " + str(c)]["Short Property 3"] = wepshort3
 				CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"]["Property " + str(c)]["Short Property 4"] = wepshort4
@@ -666,7 +666,7 @@ else:
 					numwepprops = len(jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"])
 					WeaponCommand = jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Command Set ID for Weapon Moveset"]
 					for weaponprops in list(jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"].keys()):
-						propshort1 = jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"][weaponprops]["Short Property 1"]
+						propshort1 = jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"][weaponprops]["Weapon Category ID"]
 						propshort2 = jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"][weaponprops]["Short Property 2"]
 						propshort3 = jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"][weaponprops]["Short Property 3"]
 						propshort4 = jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"][weaponprops]["Short Property 4"]
