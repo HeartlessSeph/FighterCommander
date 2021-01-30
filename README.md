@@ -1,5 +1,5 @@
 # Fighter Commander
-A work in progress Fighter Command.cfc extractor and repacker for Yakuza's Dragon Engine games.
+A work in progress Fighter Command.cfc extractor and repacker for Yakuza games.
 
 This tool exports fighter_command.cfc command sets into editable json files that can then repacked and imported into the game. This allows full control of moveset strings, follow ups, move conditions, weapon movesets and likely more. 
 
@@ -9,7 +9,7 @@ Some things to note:
 
 •There are still a bunch of undocumented variables. Values or bytes that are documented will be included in updates to this tool as they are found. As such, if you release a moveset mod, please include the exact version of the tool used if you are including only the json as future updates of the tool might become incompatible.
 
-•This has only been thoroughly tested with Kiwami 2. It seems to correctly extract the cfc's of Yakuza 6 and Judgement, but I can't be 100% sure that those correctly compile after being extracted. As such, if you attempt to do so and find errors, please include them in issues so I can address them.
+•This has only been thoroughly tested with Kiwami 2. It seems to correctly extract the cfc's of Yakuza 6 and Judgement, but I can't be 100% sure that those correctly compile after being extracted. As such, if you attempt to do so and find errors, please include them in issues so I can address them. I also added support for Yakuza 0 and Kiwami 1. Support for Yakuza 5 and Yakuza Ishin is currently a work in progress.
 
 •Despite the fact that it seems to correctly compile, this is a work in progress tool and has only been tested in game during premium adventure. I have not done a full playthrough to test so please expect errors and report them if they pop up.
 
