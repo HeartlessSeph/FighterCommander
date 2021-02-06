@@ -148,12 +148,17 @@ def GetMovefromIDx(Idx, FollowUpMoveIdx):
 	
 CommandSetDictionary = tree() #Stores Data for Command Sets
 CommandSetIDDictionary = OrderedDict() #Stores a list of Command Sets and their ID's for reference.
+CommandSetOrderIDxDictionary = OrderedDict()
 VersionDictionary = OrderedDict() #Stores a list of Version Numbers and their Associated Engine
 VersionDictionary[7] = "Old Engine"
 VersionDictionary[16] = "Dragon Engine"
 VersionDictionary[17] = "Dragon Engine"
+OEGameDictionary = OrderedDict()
+OEGameDictionary["Yakuza 0 / Kiwami 1"] = 0
+OEGameDictionary["Yakuza 5"] = 1
 jsonfile = OrderedDict() #Stores the dumped json from file.
 FollowUpMoveIdx = [] #Stores Id's of Moves for follow ups
+CommandSetOrderIDx = 0
 
 parser = argparse.ArgumentParser(description="Fighter_cfc extraction tool")
 parser.add_argument("file", help=".cfc file")
@@ -183,6 +188,15 @@ if filecheck == True:
 	
 	#Start of Old Engine Extraction
 	if VersionDictionary[fileversion] == "Old Engine":
+		print("Please choose which Old Engine Game you are extracting from:")
+		print("0 = Yakuza 0/Kiwami 1")
+		print("1 = Yakuza 5")
+		OEGameText = input("Enter a Number: ")
+		OEGame = int(OEGameText)
+		if OEGame > 1:
+			print("An incorrect option was entered. Please restart the program and try again.")
+			input("Press ENTER to exit... ")
+			sys.exit()
 		filesize = int.from_bytes(f.read(4),"big")
 		f.seek(filesize)
 		f.seek(-8, 1)
@@ -193,6 +207,10 @@ if filecheck == True:
 		a = 0
 		while a < NumCommandSets:
 			CommandSetDictionary["File Version"] = fileversion
+			if OEGame == 0:
+				CommandSetDictionary["Old Engine Game"] = "Yakuza 0 / Kiwami 1"
+			elif OEGame == 1:
+				CommandSetDictionary["Old Engine Game"] = "Yakuza 5"
 			setname = GetCommandSetName(f, "big")
 			FollowUpMoveIdx = []
 			nextset = f.tell() + 4
@@ -216,15 +234,22 @@ if filecheck == True:
 				f.seek(4, 1)
 				FollowUpMoveIdx.append([b, movename])
 				NumFollowUps = int.from_bytes(f.read(1),"big")
-				NumAdditionalProps = int.from_bytes(f.read(1),"big")
-				AnimTableBool = int.from_bytes(f.read(1),"big")
+				if OEGame == 0:
+					NumAdditionalProps = int.from_bytes(f.read(1),"big")
+					AnimTableBool = int.from_bytes(f.read(1),"big")
+				elif OEGame == 1:
+					AnimTableBool = int.from_bytes(f.read(1),"big")
+					NumAdditionalProps = int.from_bytes(f.read(1),"big")
 				movetype = int.from_bytes(f.read(1),"big")
 				AnimPointer = int.from_bytes(f.read(4),"big")
 				f.seek(-4, 1)
 				animshort1 = int.from_bytes(f.read(2),"big")
 				animshort2 = int.from_bytes(f.read(2),"big")
 				FollowUpsPointer = int.from_bytes(f.read(4),"big")
-				AdditionalPropsPointer = int.from_bytes(f.read(4),"big")
+				if OEGame == 0:
+					AdditionalPropsPointer = int.from_bytes(f.read(4),"big")
+				elif OEGame == 1:
+					AdditionalPropsPointer = AnimPointer
 				
 				#f.seek(12, 1) why was this here again?
 				CommandSetDictionary[(setname)]["Move Table"][movename]["Move Type"] = movetype #+ 1
@@ -234,7 +259,11 @@ if filecheck == True:
 				if AnimTableBool == 1:
 					currentpos = f.tell()
 					f.seek(AnimPointer)
-					NumAnims = int.from_bytes(f.read(2),"big")
+					if OEGame == 0:
+						NumAnims = int.from_bytes(f.read(2),"big")
+					elif OEGame == 1:
+						unkval = NumAnims = int.from_bytes(f.read(1),"big")
+						NumAnims = int.from_bytes(f.read(1),"big")
 					f.seek(2, 1)
 					AnimTablePointer = int.from_bytes(f.read(4),"big")
 					f.seek(AnimTablePointer)
@@ -394,11 +423,16 @@ if filecheck == True:
 				f.seek(nextwepset)
 				b = b + 1
 			f.seek(nextset)
+			CommandSetOrderIDxDictionary[CommandSetOrderIDx] = setname
+			CommandSetOrderIDx = CommandSetOrderIDx + 1
 			
 			with open(mypath + "\\" + str(setname) + ".json", 'w') as outfile:
 				json.dump(CommandSetDictionary, outfile, indent=2, ensure_ascii=False)
 			CommandSetDictionary.clear()
 			a = a + 1
+			
+		with open("Command Set Order List.json", 'w') as outfile:
+			json.dump(CommandSetOrderIDxDictionary, outfile, indent=1, ensure_ascii=False)
 	
 	
 	
@@ -636,8 +670,14 @@ if filecheck == True:
 			CommandSetDictionary.clear()
 			a = a + 1
 			
-		with open("Command Set List.json", 'w') as outfile:
+			CommandSetOrderIDxDictionary[CommandSetOrderIDx] = setname
+			CommandSetOrderIDx = CommandSetOrderIDx + 1
+			
+		with open("Command Set List (Reference Only).json", 'w') as outfile:
 			json.dump(CommandSetIDDictionary, outfile, indent=1, ensure_ascii=False)
+			
+		with open("Command Set Order List.json", 'w') as outfile:
+			json.dump(CommandSetOrderIDxDictionary, outfile, indent=1, ensure_ascii=False)
 		f.close
 #End of File extract
 
@@ -653,6 +693,10 @@ else:
 		with open(curfile, 'r', encoding='utf8') as file:
 			jsonfile = json.load(file)
 			fileversion = jsonfile["File Version"]
+			if "Old Engine Game" in jsonfile:
+				enginegame = jsonfile["Old Engine Game"]
+			else:
+				enginegame = 0
 	
 
 		
@@ -706,8 +750,12 @@ else:
 		
 		#Parsing data from the jsons into Fighter_Command begins here.
 		CommandSetPointerList = []
-		for f in os.listdir(kfile):#Loops through all Json files and collects data.
-			curfile = workdir + "\\" + f
+		numcommandsets = len(os.listdir(kfile))
+		orderfile = open("Command Set Order List.json", 'rb')
+		CommandSetOrderDictionary = json.load(orderfile)
+		CommandSetOrderIDx = 0
+		while CommandSetOrderIDx < numcommandsets:
+			curfile = workdir + "\\" + CommandSetOrderDictionary[str(CommandSetOrderIDx)] + ".json"
 			with open(curfile, 'r', encoding='utf8') as file:
 				jsonfile = json.load(file)
 				MovePointers = []
@@ -989,6 +1037,7 @@ else:
 				newfile.write(int_to_bytes(len(MovePointers), 2))
 				newfile.write(int_to_bytes(len(WeaponSetPointers), 2))
 				newfile.write(b'\x00\x00\x00\x00')
+				CommandSetOrderIDx = CommandSetOrderIDx + 1
 
 
 		x = 0
@@ -1015,53 +1064,59 @@ else:
 
 
 
-
-
-
-
-
-
-
-
-
-
-
 	elif VersionDictionary[fileversion] == "Old Engine":
+		if enginegame == 0:
+			print("Unable to find Engine Game. Please choose which Old Engine Game you are repacking:")
+			print("0 = Yakuza 0/Kiwami 1")
+			print("1 = Yakuza 5")
+			OEGameText = input("Enter a Number: ")
+			OEGame = int(OEGameText)
+			if OEGame > 1:
+				print("An incorrect option was entered. Please restart the program and try again.")
+				input("Press ENTER to exit... ")
+				sys.exit()
+			setnamekey = 1
+		else:
+			OEGame = OEGameDictionary[enginegame]
+			setnamekey = 2
 		newfile.write(b'\x43\x46\x43\x49\x02\x01\x00\x00\x00\x00\x00\x07\x00\x00\x00\x00')#Writes header with filesize filler
 		for f in os.listdir(kfile):#Loops through all Json files and collects string data
 			curfile = workdir + "\\" + f
 			with open(curfile, 'r', encoding='utf8') as file:
 				jsonfile = json.load(file)
 				fileversion = jsonfile["File Version"]
-				commandsetname = list(jsonfile.keys())[1]
+				commandsetname = list(jsonfile.keys())[setnamekey]
 				stringlist.append(commandsetname)
 				commandsetID = jsonfile[commandsetname]["Command Set Name"]
+				if commandsetID == "Null":
+					commandsetID = b'\x00'
 				stringlist.append(commandsetID)
-				for move in list(jsonfile[commandsetname]["Move Table"].keys()):
-					movename = move
-					stringlist.append(movename)
-					if "Animation Used" in jsonfile[commandsetname]["Move Table"][movename]:
-						animvalue = jsonfile[commandsetname]["Move Table"][movename]["Animation Used"]
-						if animvalue == "Null":
-							animvalue = b'\x00'
-						stringlist.append(animvalue)
-					if "Animation Table" in jsonfile[commandsetname]["Move Table"][movename]:
-						for animtables in list(jsonfile[commandsetname]["Move Table"][movename]["Animation Table"].keys()):
-							animvalue = jsonfile[commandsetname]["Move Table"][movename]["Animation Table"][animtables]["Animation Used"]
+				if "Move Table" in jsonfile[commandsetname]:
+					for move in list(jsonfile[commandsetname]["Move Table"].keys()):
+						movename = move
+						stringlist.append(movename)
+						if "Animation Used" in jsonfile[commandsetname]["Move Table"][movename]:
+							animvalue = jsonfile[commandsetname]["Move Table"][movename]["Animation Used"]
 							if animvalue == "Null":
 								animvalue = b'\x00'
 							stringlist.append(animvalue)
-					if "Follow Up Table" in jsonfile[commandsetname]["Move Table"][movename]:
-						for followuptable in list(jsonfile[commandsetname]["Move Table"][movename]["Follow Up Table"].keys()):
-							if "Follows Up Properties" in jsonfile[commandsetname]["Move Table"][movename]["Follow Up Table"][followuptable]:
-								for followupprop in list(jsonfile[commandsetname]["Move Table"][movename]["Follow Up Table"][followuptable]["Follows Up Properties"].keys()):
-									propertytype = jsonfile[commandsetname]["Move Table"][movename]["Follow Up Table"][followuptable]["Follows Up Properties"][followupprop]["Property Type"]
-									if propertytype == 10:
-										heataction = jsonfile[commandsetname]["Move Table"][movename]["Follow Up Table"][followuptable]["Follows Up Properties"][followupprop]["Heat Action"]
-										stringlist.append(heataction)
-									if propertytype == 22:
-										propertypointer = jsonfile[commandsetname]["Move Table"][movename]["Follow Up Table"][followuptable]["Follows Up Properties"][followupprop]["Property Pointer"]
-										stringlist.append(propertypointer)
+						if "Animation Table" in jsonfile[commandsetname]["Move Table"][movename]:
+							for animtables in list(jsonfile[commandsetname]["Move Table"][movename]["Animation Table"].keys()):
+								animvalue = jsonfile[commandsetname]["Move Table"][movename]["Animation Table"][animtables]["Animation Used"]
+								if animvalue == "Null":
+									animvalue = b'\x00'
+								stringlist.append(animvalue)
+						if "Follow Up Table" in jsonfile[commandsetname]["Move Table"][movename]:
+							for followuptable in list(jsonfile[commandsetname]["Move Table"][movename]["Follow Up Table"].keys()):
+								if "Follows Up Properties" in jsonfile[commandsetname]["Move Table"][movename]["Follow Up Table"][followuptable]:
+									for followupprop in list(jsonfile[commandsetname]["Move Table"][movename]["Follow Up Table"][followuptable]["Follows Up Properties"].keys()):
+										propertytype = jsonfile[commandsetname]["Move Table"][movename]["Follow Up Table"][followuptable]["Follows Up Properties"][followupprop]["Property Type"]
+										if propertytype == 10:
+											heataction = jsonfile[commandsetname]["Move Table"][movename]["Follow Up Table"][followuptable]["Follows Up Properties"][followupprop]["Heat Action"]
+											stringlist.append(heataction)
+										if propertytype == 22:
+											propertypointer = jsonfile[commandsetname]["Move Table"][movename]["Follow Up Table"][followuptable]["Follows Up Properties"][followupprop]["Property Pointer"]
+											stringlist.append(propertypointer)
 		stringlist = list( dict.fromkeys(stringlist) )
 		x = 0
 		
@@ -1081,191 +1136,208 @@ else:
 		
 		#Parsing data from the jsons into Fighter_Command begins here.
 		CommandSetPointerList = []
-		for f in os.listdir(kfile):#Loops through all Json files and collects data.
-			curfile = workdir + "\\" + f
+		numcommandsets = len(os.listdir(kfile))
+		orderfile = open("Command Set Order List.json", 'rb')
+		CommandSetOrderDictionary = json.load(orderfile)
+		CommandSetOrderIDx = 0
+		while CommandSetOrderIDx < numcommandsets:
+			curfile = workdir + "\\" + CommandSetOrderDictionary[str(CommandSetOrderIDx)] + ".json"
 			with open(curfile, 'r', encoding='utf8') as file:
 				jsonfile = json.load(file)
 				MovePointers = []
 				FollowUpIdx = OrderedDict()
 				fileversion = jsonfile["File Version"]
-				commandsetname = list(jsonfile.keys())[1]
+				commandsetname = list(jsonfile.keys())[setnamekey]
 				commandsetID = jsonfile[commandsetname]["Command Set Name"]
+				if commandsetID == "Null":
+					commandsetID = b'\x00'
 
 				#Shitty copy paste to get Move Idx's for later use
 				x = 0
-				for move in list(jsonfile[commandsetname]["Move Table"].keys()):
-					movename = move
-					FollowUpIdx[movename] = x
-					x = x + 1
+				if "Move Table" in jsonfile[commandsetname]:
+					for move in list(jsonfile[commandsetname]["Move Table"].keys()):
+						movename = move
+						FollowUpIdx[movename] = x
+						x = x + 1
 					
 				x = 0
-				for move in list(jsonfile[commandsetname]["Move Table"].keys()):
-					FollowUpPropValues = []
-					FollowUpValues = []
-					FollowUpValuePointers = []
-					FollowUpPointers = []
-					MoveValues = []
-					AnimationTableValues = []
-					AnimationValues = []
-					AnimationTablePointers = []
-					AdditionalMoveProps = []
-					AdditionalMovePropsPointers = []
-					movename = move
-					movetype = jsonfile[commandsetname]["Move Table"][movename]["Move Type"]
-					animtablebool = jsonfile[commandsetname]["Move Table"][movename]["Animation Table Bool"]
-					if "Follow Up Table" in jsonfile[commandsetname]["Move Table"][movename]:
-						numfollowups = len(jsonfile[commandsetname]["Move Table"][movename]["Follow Up Table"])
-						for followuptable in list(jsonfile[commandsetname]["Move Table"][movename]["Follow Up Table"].keys()):
-							temparray1 = []
-							followupval = jsonfile[commandsetname]["Move Table"][movename]["Follow Up Table"][followuptable]["Follows Up to"]
-							temparray1.append(followupval)
-							FollowUpValues.append(temparray1)
-							if "Follows Up Properties" in jsonfile[commandsetname]["Move Table"][movename]["Follow Up Table"][followuptable]:
-								temparray2 = []
-								for followupprop in list(jsonfile[commandsetname]["Move Table"][movename]["Follow Up Table"][followuptable]["Follows Up Properties"].keys()):
-									propertytype = jsonfile[commandsetname]["Move Table"][movename]["Follow Up Table"][followuptable]["Follows Up Properties"][followupprop]["Property Type"]
-									if propertytype == 10:
-										heataction = jsonfile[commandsetname]["Move Table"][movename]["Follow Up Table"][followuptable]["Follows Up Properties"][followupprop]["Heat Action"]
-										temparray2.append([propertytype, heataction])
-									elif propertytype == 22:
-										propertypointer = jsonfile[commandsetname]["Move Table"][movename]["Follow Up Table"][followuptable]["Follows Up Properties"][followupprop]["Property Pointer"]
-										temparray2.append([propertytype, propertypointer])
-									else:
-										byte1 = jsonfile[commandsetname]["Move Table"][movename]["Follow Up Table"][followuptable]["Follows Up Properties"][followupprop]["Unk Byte 1"]
-										byte2 = jsonfile[commandsetname]["Move Table"][movename]["Follow Up Table"][followuptable]["Follows Up Properties"][followupprop]["Unk Byte 2"]
-										byte3 = jsonfile[commandsetname]["Move Table"][movename]["Follow Up Table"][followuptable]["Follows Up Properties"][followupprop]["Unk Byte 3"]
-										byte4 = jsonfile[commandsetname]["Move Table"][movename]["Follow Up Table"][followuptable]["Follows Up Properties"][followupprop]["Unk Byte 4"]
-										temparray2.append([propertytype,byte1,byte2,byte3,byte4])
-								FollowUpPropValues.append(temparray2)
-							else:
-								FollowUpPropValues.append([])
-					else:
-						FollowUpPropValues.append([])
-						numfollowups = 0
-					if animtablebool == 1:
-						for animtable in list(jsonfile[commandsetname]["Move Table"][movename]["Animation Table"].keys()):
-							animvalue = jsonfile[commandsetname]["Move Table"][movename]["Animation Table"][animtable]["Animation Used"]
+				if "Move Table" in jsonfile[commandsetname]:
+					for move in list(jsonfile[commandsetname]["Move Table"].keys()):
+						FollowUpPropValues = []
+						FollowUpValues = []
+						FollowUpValuePointers = []
+						FollowUpPointers = []
+						MoveValues = []
+						AnimationTableValues = []
+						AnimationValues = []
+						AnimationTablePointers = []
+						AdditionalMoveProps = []
+						AdditionalMovePropsPointers = []
+						movename = move
+						movetype = jsonfile[commandsetname]["Move Table"][movename]["Move Type"]
+						animtablebool = jsonfile[commandsetname]["Move Table"][movename]["Animation Table Bool"]
+						if "Follow Up Table" in jsonfile[commandsetname]["Move Table"][movename]:
+							numfollowups = len(jsonfile[commandsetname]["Move Table"][movename]["Follow Up Table"])
+							for followuptable in list(jsonfile[commandsetname]["Move Table"][movename]["Follow Up Table"].keys()):
+								temparray1 = []
+								followupval = jsonfile[commandsetname]["Move Table"][movename]["Follow Up Table"][followuptable]["Follows Up to"]
+								temparray1.append(followupval)
+								FollowUpValues.append(temparray1)
+								if "Follows Up Properties" in jsonfile[commandsetname]["Move Table"][movename]["Follow Up Table"][followuptable]:
+									temparray2 = []
+									for followupprop in list(jsonfile[commandsetname]["Move Table"][movename]["Follow Up Table"][followuptable]["Follows Up Properties"].keys()):
+										propertytype = jsonfile[commandsetname]["Move Table"][movename]["Follow Up Table"][followuptable]["Follows Up Properties"][followupprop]["Property Type"]
+										if propertytype == 10:
+											heataction = jsonfile[commandsetname]["Move Table"][movename]["Follow Up Table"][followuptable]["Follows Up Properties"][followupprop]["Heat Action"]
+											temparray2.append([propertytype, heataction])
+										elif propertytype == 22:
+											propertypointer = jsonfile[commandsetname]["Move Table"][movename]["Follow Up Table"][followuptable]["Follows Up Properties"][followupprop]["Property Pointer"]
+											temparray2.append([propertytype, propertypointer])
+										else:
+											byte1 = jsonfile[commandsetname]["Move Table"][movename]["Follow Up Table"][followuptable]["Follows Up Properties"][followupprop]["Unk Byte 1"]
+											byte2 = jsonfile[commandsetname]["Move Table"][movename]["Follow Up Table"][followuptable]["Follows Up Properties"][followupprop]["Unk Byte 2"]
+											byte3 = jsonfile[commandsetname]["Move Table"][movename]["Follow Up Table"][followuptable]["Follows Up Properties"][followupprop]["Unk Byte 3"]
+											byte4 = jsonfile[commandsetname]["Move Table"][movename]["Follow Up Table"][followuptable]["Follows Up Properties"][followupprop]["Unk Byte 4"]
+											temparray2.append([propertytype,byte1,byte2,byte3,byte4])
+									FollowUpPropValues.append(temparray2)
+								else:
+									FollowUpPropValues.append([])
+						else:
+							FollowUpPropValues.append([])
+							numfollowups = 0
+						if animtablebool == 1:
+							for animtable in list(jsonfile[commandsetname]["Move Table"][movename]["Animation Table"].keys()):
+								animvalue = jsonfile[commandsetname]["Move Table"][movename]["Animation Table"][animtable]["Animation Used"]
+								if animvalue == "Null":
+									animvalue = b'\x00'
+								byte1 = jsonfile[commandsetname]["Move Table"][movename]["Animation Table"][animtable]["Unknown byte 1"]
+								byte2 = jsonfile[commandsetname]["Move Table"][movename]["Animation Table"][animtable]["Unknown byte 2"]
+								byte3 = jsonfile[commandsetname]["Move Table"][movename]["Animation Table"][animtable]["Unknown byte 3"]
+								byte4 = jsonfile[commandsetname]["Move Table"][movename]["Animation Table"][animtable]["Unknown byte 4"]
+								AnimationTableValues.append([animvalue, byte1, byte2, byte3, byte4])
+						elif "Animation Used" in jsonfile[commandsetname]["Move Table"][movename]:
+							animvalue = jsonfile[commandsetname]["Move Table"][movename]["Animation Used"]
 							if animvalue == "Null":
 								animvalue = b'\x00'
-							byte1 = jsonfile[commandsetname]["Move Table"][movename]["Animation Table"][animtable]["Unknown byte 1"]
-							byte2 = jsonfile[commandsetname]["Move Table"][movename]["Animation Table"][animtable]["Unknown byte 2"]
-							byte3 = jsonfile[commandsetname]["Move Table"][movename]["Animation Table"][animtable]["Unknown byte 3"]
-							byte4 = jsonfile[commandsetname]["Move Table"][movename]["Animation Table"][animtable]["Unknown byte 4"]
-							AnimationTableValues.append([animvalue, byte1, byte2, byte3, byte4])
-					elif "Animation Used" in jsonfile[commandsetname]["Move Table"][movename]:
-						animvalue = jsonfile[commandsetname]["Move Table"][movename]["Animation Used"]
-						if animvalue == "Null":
-							animvalue = b'\x00'
-						AnimationValues.append([animvalue,"Useless"])
-					elif movetype == 2:
-						animvalue = -1
-						AnimationValues.append([animvalue,"Useless"])
-					elif movetype == 3:
-						byte1 = jsonfile[commandsetname]["Move Table"][movename]["Moveset IDx for Sync"]
-						byte2 = jsonfile[commandsetname]["Move Table"][movename]["Unknown Short"]
-						AnimationValues.append([byte1,byte2])
-					if "Additional Properties Table" in jsonfile[commandsetname]["Move Table"][movename]:
-						numadditionalprops = len(jsonfile[commandsetname]["Move Table"][movename]["Additional Properties Table"])
-						for moveproperty in list(jsonfile[commandsetname]["Move Table"][movename]["Additional Properties Table"].keys()):
-							unkshort1 = jsonfile[commandsetname]["Move Table"][movename]["Additional Properties Table"][moveproperty]["Unk Short 1"]
-							unkshort2 = jsonfile[commandsetname]["Move Table"][movename]["Additional Properties Table"][moveproperty]["Unk Short 1"]
-							AdditionalMoveProps.append([unkshort1, unkshort2])
-					else:
-						numadditionalprops = 0
-					
-					#Writes Move to File
-					x = 0
-					while x < numfollowups:
-						FollowUpPropValuePointers = []
-						y = 0
-						while y < len(FollowUpPropValues[x]):
+							AnimationValues.append([animvalue,"Useless"])
+						elif movetype == 2:
+							animvalue = -1
+							AnimationValues.append([animvalue,"Useless"])
+						elif movetype == 3:
+							byte1 = jsonfile[commandsetname]["Move Table"][movename]["Moveset IDx for Sync"]
+							byte2 = jsonfile[commandsetname]["Move Table"][movename]["Unknown Short"]
+							AnimationValues.append([byte1,byte2])
+						if "Additional Properties Table" in jsonfile[commandsetname]["Move Table"][movename]:
+							numadditionalprops = len(jsonfile[commandsetname]["Move Table"][movename]["Additional Properties Table"])
+							for moveproperty in list(jsonfile[commandsetname]["Move Table"][movename]["Additional Properties Table"].keys()):
+								unkshort1 = jsonfile[commandsetname]["Move Table"][movename]["Additional Properties Table"][moveproperty]["Unk Short 1"]
+								unkshort2 = jsonfile[commandsetname]["Move Table"][movename]["Additional Properties Table"][moveproperty]["Unk Short 1"]
+								AdditionalMoveProps.append([unkshort1, unkshort2])
+						else:
+							numadditionalprops = 0
+						
+						#Writes Move to File
+						x = 0
+						while x < numfollowups:
+							FollowUpPropValuePointers = []
+							y = 0
+							while y < len(FollowUpPropValues[x]):
+								currentpos = newfile.tell()
+								FollowUpPropValuePointers.append(currentpos)
+								if FollowUpPropValues[x][y][0] == 10:
+									StringPointer = stringpointerdict[FollowUpPropValues[x][y][1]]
+									newfile.write(int_to_bytes(FollowUpPropValues[x][y][0], 4, "big"))
+									newfile.write(int_to_bytes(StringPointer, 4, "big"))
+								elif FollowUpPropValues[x][y][0] == 22:
+									PropertyPointer = stringpointerdict[FollowUpPropValues[x][y][1]]
+									newfile.write(int_to_bytes(FollowUpPropValues[x][y][0], 4, "big"))
+									newfile.write(int_to_bytes(PropertyPointer, 4, "big"))
+								else:
+									newfile.write(int_to_bytes(FollowUpPropValues[x][y][0], 4, "big"))
+									newfile.write(int_to_bytes(FollowUpPropValues[x][y][4], 1, "big"))
+									newfile.write(int_to_bytes(FollowUpPropValues[x][y][3], 1, "big"))
+									newfile.write(int_to_bytes(FollowUpPropValues[x][y][2], 1, "big"))
+									newfile.write(int_to_bytes(FollowUpPropValues[x][y][1], 1, "big"))
+								y = y + 1
+							#Writes Move Follow Up Property List to File
+							FollowUpPropertyListPointer = newfile.tell()
+							y = 0
+							while y < len(FollowUpPropValuePointers):
+								newfile.write(int_to_bytes(FollowUpPropValuePointers[y], 4, "big"))
+								y = y + 1
+							FollowUpPointers.append(newfile.tell())
+							newfile.write(int_to_bytes(len(FollowUpPropValuePointers), 2, "big"))
+							newfile.write(int_to_bytes(FollowUpIdx[FollowUpValues[x][0]], 2, "big"))
+							newfile.write(int_to_bytes(FollowUpPropertyListPointer, 4, "big"))
+							x = x + 1
+						x = 0
+						AdditionalMovePropsPointers = []
+						while x < numadditionalprops:
 							currentpos = newfile.tell()
-							FollowUpPropValuePointers.append(currentpos)
-							if FollowUpPropValues[x][y][0] == 10:
-								StringPointer = stringpointerdict[FollowUpPropValues[x][y][1]]
-								newfile.write(int_to_bytes(FollowUpPropValues[x][y][0], 4, "big"))
-								newfile.write(int_to_bytes(StringPointer, 4, "big"))
-							elif FollowUpPropValues[x][y][0] == 22:
-								PropertyPointer = stringpointerdict[FollowUpPropValues[x][y][1]]
-								newfile.write(int_to_bytes(FollowUpPropValues[x][y][0], 4, "big"))
-								newfile.write(int_to_bytes(PropertyPointer, 4, "big"))
-							else:
-								newfile.write(int_to_bytes(FollowUpPropValues[x][y][0], 4, "big"))
-								newfile.write(int_to_bytes(FollowUpPropValues[x][y][4], 1, "big"))
-								newfile.write(int_to_bytes(FollowUpPropValues[x][y][3], 1, "big"))
-								newfile.write(int_to_bytes(FollowUpPropValues[x][y][2], 1, "big"))
-								newfile.write(int_to_bytes(FollowUpPropValues[x][y][1], 1, "big"))
-							y = y + 1
-						#Writes Move Follow Up Property List to File
-						FollowUpPropertyListPointer = newfile.tell()
-						y = 0
-						while y < len(FollowUpPropValuePointers):
-							newfile.write(int_to_bytes(FollowUpPropValuePointers[y], 4, "big"))
-							y = y + 1
-						FollowUpPointers.append(newfile.tell())
-						newfile.write(int_to_bytes(len(FollowUpPropValuePointers), 2, "big"))
-						newfile.write(int_to_bytes(FollowUpIdx[FollowUpValues[x][0]], 2, "big"))
-						newfile.write(int_to_bytes(FollowUpPropertyListPointer, 4, "big"))
-						x = x + 1
-					x = 0
-					AdditionalMovePropsPointers = []
-					while x < numadditionalprops:
-						currentpos = newfile.tell()
-						AdditionalMovePropsPointers.append(currentpos)
-						newfile.write(int_to_bytes(AdditionalMoveProps[x][0], 2, "big"))
-						newfile.write(int_to_bytes(AdditionalMoveProps[x][1], 2, "big"))
-						x = x + 1
-					
-					if animtablebool == 1:
-						x = 0
-						while x < len(AnimationTableValues):
-							AnimationTablePointers.append(newfile.tell())
-							newfile.write(int_to_bytes(stringpointerdict[AnimationTableValues[x][0]], 4, "big"))
-							newfile.write(int_to_bytes(AnimationTableValues[x][1], 1))
-							newfile.write(int_to_bytes(AnimationTableValues[x][2], 1))
-							newfile.write(int_to_bytes(AnimationTableValues[x][3], 1))
-							newfile.write(int_to_bytes(AnimationTableValues[x][4], 1))
+							AdditionalMovePropsPointers.append(currentpos)
+							newfile.write(int_to_bytes(AdditionalMoveProps[x][0], 2, "big"))
+							newfile.write(int_to_bytes(AdditionalMoveProps[x][1], 2, "big"))
 							x = x + 1
-						AnimTableTablePointer = newfile.tell()
+						
+						if animtablebool == 1:
+							x = 0
+							while x < len(AnimationTableValues):
+								AnimationTablePointers.append(newfile.tell())
+								newfile.write(int_to_bytes(stringpointerdict[AnimationTableValues[x][0]], 4, "big"))
+								newfile.write(int_to_bytes(AnimationTableValues[x][1], 1))
+								newfile.write(int_to_bytes(AnimationTableValues[x][2], 1))
+								newfile.write(int_to_bytes(AnimationTableValues[x][3], 1))
+								newfile.write(int_to_bytes(AnimationTableValues[x][4], 1))
+								x = x + 1
+							AnimTableTablePointer = newfile.tell()
+							x = 0
+							while x < len(AnimationTablePointers):
+								newfile.write(int_to_bytes(AnimationTablePointers[x], 4, "big"))
+								x = x + 1
+							AnimTableTableTablePointer = newfile.tell()
+							if OEGame == 0:
+								newfile.write(int_to_bytes(len(AnimationTableValues), 2, "big"))
+							elif OEGame == 1:
+								newfile.write(int_to_bytes(1, 1, "big"))
+								newfile.write(int_to_bytes(len(AnimationTableValues), 1, "big"))
+							newfile.write(b'\x00\x00')
+							newfile.write(int_to_bytes(AnimTableTablePointer, 4, "big"))
 						x = 0
-						while x < len(AnimationTablePointers):
-							newfile.write(int_to_bytes(AnimationTablePointers[x], 4, "big"))
+						FollowUpTablePointer = newfile.tell()
+						while x < numfollowups:
+							newfile.write(int_to_bytes(FollowUpPointers[x], 4, "big"))
 							x = x + 1
-						AnimTableTableTablePointer = newfile.tell()
-						newfile.write(int_to_bytes(len(AnimationTableValues), 2, "big"))
-						newfile.write(b'\x00\x00')
-						newfile.write(int_to_bytes(AnimTableTablePointer, 4, "big"))
-					x = 0
-					FollowUpTablePointer = newfile.tell()
-					while x < numfollowups:
-						newfile.write(int_to_bytes(FollowUpPointers[x], 4, "big"))
-						x = x + 1
-					x = 0
-					AdditionalMovePropsPointer = newfile.tell()
-					while x < numadditionalprops:
-						#Writes Move Additional Property List to File
-						newfile.write(int_to_bytes(AdditionalMovePropsPointers[x], 4, "big"))
-						x = x + 1
-					MovePointers.append(newfile.tell())
-					curmovepointer = newfile.tell()
-					newfile.write(int_to_bytes(stringpointerdict[movename], 4, "big"))
-					newfile.write(int_to_bytes(numfollowups, 1, "big"))
-					newfile.write(int_to_bytes(numadditionalprops, 1, "big"))
-					newfile.write(int_to_bytes(animtablebool, 1, "big"))
-					newfile.write(int_to_bytes(movetype, 1, "big"))
-					if animtablebool == 1:
-						newfile.write(int_to_bytes(AnimTableTableTablePointer, 4, "big"))
-					elif movetype == 2:
-						newfile.write(int_to_bytes(AnimationValues[0][0], 4))
-					elif movetype == 16:
-						newfile.write(b'\x00\x00\x00\x00')
-					elif movetype == 3:
-						newfile.write(int_to_bytes(AnimationValues[0][0], 2, "big"))
-						newfile.write(int_to_bytes(AnimationValues[0][1], 2, "big"))
-					else:
-						newfile.write(int_to_bytes(stringpointerdict[AnimationValues[0][0]], 4, "big"))
-					newfile.write(int_to_bytes(FollowUpTablePointer, 4, "big"))
-					newfile.write(int_to_bytes(AdditionalMovePropsPointer, 4, "big"))
+						x = 0
+						AdditionalMovePropsPointer = newfile.tell()
+						while x < numadditionalprops:
+							#Writes Move Additional Property List to File
+							newfile.write(int_to_bytes(AdditionalMovePropsPointers[x], 4, "big"))
+							x = x + 1
+						MovePointers.append(newfile.tell())
+						curmovepointer = newfile.tell()
+						newfile.write(int_to_bytes(stringpointerdict[movename], 4, "big"))
+						newfile.write(int_to_bytes(numfollowups, 1, "big"))
+						if OEGame == 0:
+							newfile.write(int_to_bytes(numadditionalprops, 1, "big"))
+							newfile.write(int_to_bytes(animtablebool, 1, "big"))
+						if OEGame == 1:
+							newfile.write(int_to_bytes(animtablebool, 1, "big"))
+							newfile.write(int_to_bytes(numadditionalprops, 1, "big"))
+						newfile.write(int_to_bytes(movetype, 1, "big"))
+						if animtablebool == 1:
+							newfile.write(int_to_bytes(AnimTableTableTablePointer, 4, "big"))
+						elif movetype == 2:
+							newfile.write(int_to_bytes(AnimationValues[0][0], 4))
+						elif movetype == 16:
+							newfile.write(b'\x00\x00\x00\x00')
+						elif movetype == 3:
+							newfile.write(int_to_bytes(AnimationValues[0][0], 2, "big"))
+							newfile.write(int_to_bytes(AnimationValues[0][1], 2, "big"))
+						else:
+							newfile.write(int_to_bytes(stringpointerdict[AnimationValues[0][0]], 4, "big"))
+						newfile.write(int_to_bytes(FollowUpTablePointer, 4, "big"))
+						if OEGame == 0:
+							newfile.write(int_to_bytes(AdditionalMovePropsPointer, 4, "big"))
 				x = 0
 				movetablepointer = newfile.tell()
 				while x < len(MovePointers):
@@ -1333,6 +1405,7 @@ else:
 					newfile.write(int_to_bytes(currcommandsetpointer, 4, "big"))
 				else:
 					newfile.write(int_to_bytes(WeaponMovesetListPointer, 4, "big"))
+				CommandSetOrderIDx = CommandSetOrderIDx + 1
 
 		x = 0
 		CommandSetsListPointer = newfile.tell()
