@@ -289,7 +289,8 @@ if filecheck == True:
 					CommandSetDictionary[(setname)]["Move Table"][movename]["Moveset IDx for Sync"] = animshort1
 					CommandSetDictionary[(setname)]["Move Table"][movename]["Unknown Short"] = animshort2
 				elif movetype == 2:
-					CommandSetDictionary[(setname)]["Move Table"][movename]["No Anim? Equal to FF FF FF FF"] = -1
+					CommandSetDictionary[(setname)]["Move Table"][movename]["Moveset IDx"] = animshort1 
+					CommandSetDictionary[(setname)]["Move Table"][movename]["Unknown Short"] = animshort2
 				else:
 					AnimName = GetStringFromPointer(f, AnimPointer, "big")
 					CommandSetDictionary[(setname)]["Move Table"][movename]["Animation Used"] = AnimName
@@ -485,6 +486,9 @@ if filecheck == True:
 				animbyte2 = int.from_bytes(f.read(1),"little")
 				animbyte3 = int.from_bytes(f.read(1),"little")
 				animbyte4 = int.from_bytes(f.read(1),"little")
+				f.seek(-4, 1)
+				animshort1 = int.from_bytes(f.read(2),"little")
+				animshort2 = int.from_bytes(f.read(2),"little")
 				animbyte5 = int.from_bytes(f.read(1),"little")
 				animbyte6 = int.from_bytes(f.read(1),"little")
 				animbyte7 = int.from_bytes(f.read(1),"little")
@@ -543,7 +547,8 @@ if filecheck == True:
 					CommandSetDictionary[(setname)]["Move Table"][movename]["Animation Related Byte 7"] = animbyte7
 					CommandSetDictionary[(setname)]["Move Table"][movename]["Animation Related Byte 8"] = animbyte8
 				elif movetype == 3:
-					CommandSetDictionary[(setname)]["Move Table"][movename]["No Anim? Equal to FF FF FF FF"] = -1
+					CommandSetDictionary[(setname)]["Move Table"][movename]["Moveset IDx"] = animshort1
+					CommandSetDictionary[(setname)]["Move Table"][movename]["Unknown Short"] = animshort2
 				elif movetype == 17:
 					useless = "useless"
 				else:
@@ -836,8 +841,9 @@ else:
 							animvalue = b'\x00'
 						AnimationValues.append([animvalue,"Useless"])
 					elif movetype == 3:
-						animvalue = -1
-						AnimationValues.append([animvalue,"Useless"])
+						animshort1 = byte1 = jsonfile[commandsetname]["Move Table"][movename]["Moveset IDx"]
+						animshort2 = byte1 = jsonfile[commandsetname]["Move Table"][movename]["Unknown Short"]
+						AnimationValues.append([animshort1, animshort2,"Useless"])
 					elif movetype == 17:
 						animvalue = -1
 						AnimationValues.append([animvalue,"Useless"])
@@ -937,7 +943,8 @@ else:
 						newfile.write(int_to_bytes(AnimTableTableTablePointer, 4))
 						newfile.write(b'\x00\x00\x00\x00')
 					elif movetype == 3:
-						newfile.write(int_to_bytes(AnimationValues[0][0], 4))
+						newfile.write(int_to_bytes(AnimationValues[0][0], 2))
+						newfile.write(int_to_bytes(AnimationValues[0][1], 2))
 						newfile.write(b'\x00\x00\x00\x00')
 					elif movetype == 17:
 						newfile.write(b'\x00\x00\x00\x00\x00\x00\x00\x00')
@@ -1221,8 +1228,9 @@ else:
 								animvalue = b'\x00'
 							AnimationValues.append([animvalue,"Useless"])
 						elif movetype == 2:
-							animvalue = -1
-							AnimationValues.append([animvalue,"Useless"])
+							short1 = jsonfile[commandsetname]["Move Table"][movename]["Moveset IDx"]
+							short2 = jsonfile[commandsetname]["Move Table"][movename]["Unknown Short"]
+							AnimationValues.append([short1, short2,"Useless"])
 						elif movetype == 3:
 							byte1 = jsonfile[commandsetname]["Move Table"][movename]["Moveset IDx for Sync"]
 							byte2 = jsonfile[commandsetname]["Move Table"][movename]["Unknown Short"]
@@ -1327,7 +1335,8 @@ else:
 						if animtablebool == 1:
 							newfile.write(int_to_bytes(AnimTableTableTablePointer, 4, "big"))
 						elif movetype == 2:
-							newfile.write(int_to_bytes(AnimationValues[0][0], 4))
+							newfile.write(int_to_bytes(AnimationValues[0][0], 2, "big"))
+							newfile.write(int_to_bytes(AnimationValues[0][1], 2, "big"))
 						elif movetype == 16:
 							newfile.write(b'\x00\x00\x00\x00')
 						elif movetype == 3:
