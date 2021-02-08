@@ -17,3 +17,5 @@ Some things to note:
 CREDITS:
 
 Massive thanks to Capitan Retraso for his Fighter Command notes and for helping me out on finding the move table.
+
+Also a massive thanks to ChuckP, who has done a lot of documentation for follow up property types.
