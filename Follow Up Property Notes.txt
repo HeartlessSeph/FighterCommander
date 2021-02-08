@@ -1,0 +1,160 @@
+**************************************************************************************************
+Author's Note:
+All listed Type ID's are for Dragon Engine. If you are editing Old Engine, subtract 1 from the ID.
+
+Massive thanks to ChuckP. These are basically his notes.
+**************************************************************************************************
+
+
+
+
+
+
+Type: Button Press (1), Button Hold (2) & Button Press (Buffered Input) (6)
+
+Button Press Values: The following values can be used. More than one button can be assigned by separating strings with a comma. (Example "Square, Triangle". This acts as an OR)
+"Square"
+"Triangle"
+"Circle"
+"Cross"
+"L1"
+"L2"
+"R1"
+
+Directional Pad Values: Same as above.
+"D-Pad Up"
+"D-Pad Down"
+"D-Pad Right"
+"D-Pad Left"
+"Unknown1"
+"Unknown5"
+"Unknown6"
+"Unknown7"
+
+Conditional Values:
+"Input must be Held"
+"Execute action on Button Release"
+"Unknown3"
+"Unknown4"
+"Unknown5"
+"Unknown6"
+"Unknown7"
+"Unknown8"
+
+
+
+Type: Follow Up Start Lock (3)
+Placing this property in makes the hact adhere to the follow up start lock from Property.bin (OE) or the bep (DE).
+
+
+Type: Follow Up Lifetime Lock (4)
+Description: Placing this property in makes the hact adhere to the follow up lifetime lock from Property.bin (OE) or the bep (DE).
+
+
+Type: State Modifier (5)
+Description: Places a condition based on the enemies' current state
+
+State Values:
+"Unk0" (This is Dragon Engine Only)
+"Unk1"
+"Unk2"
+"Run Startup to Full Run"
+"Enemy Down, Including getting up Animation"
+"Enemy Standing"
+"Unk6"
+"Enemy Down from the Front"
+"Enemy Down from Behind"
+"Unk9"
+"Unk10"
+"Unk11"
+"Unk12"
+"Unk13"
+"Unk14"
+"Unk15"
+"Unk16"
+"Unk17"
+"Unk18"
+"Unk19"
+"Unk21"
+"Unk22"
+"Unk24"
+"Unk25"
+"Unk26"
+"Unk27"
+"Unk28"
+"Unk29"
+"Unk30"
+"Unk31"
+"Unk32"
+"Unk33"
+"Unk34"
+"Unk35"
+"Unk36"
+"Unk37"
+"Unk38"
+"Unk39"
+"Unk40"
+
+
+Type: Follow Up on Hit (7)
+Description: Follows up to the designated move if the attack lands
+
+
+
+Type: Analog Deadzone (9)
+Description: Analog must be fully held back for input to register.
+
+
+
+Type: Heat Action (11)
+Hact Name: Name of the hact used. This has to be defined in hact.chp to work properly.
+
+
+
+Type: Enemy Distance (12)
+Description: Distance enemy has to be from you for follow up to activate
+
+
+Type: Analog Direction (19)
+Description: Analog stick must be held in direction
+
+Analog Direction: Not sure how this maps exactly. ChuckP found the following values however:
+
+2 - 360°
+8 - 270°
+32 - 180°
+64 - 90°
+96 - 45°
+
+
+Conditions:
+0 - Input must be held down
+32 - Side direction
+128 - Input must NOT be held down
+
+
+
+Type: Quickstep (22)
+Description: Follows up to move depending on direction of quickstep
+
+Quickstep Direction Values: Unlike move buttons, only one of these can be active at a time.
+
+"Front Quickstep"
+"Left Quickstep"
+"Back Quickstep"
+"Right Quickstep"
+
+
+
+Type: Upgrade Unlock (23)
+Description: Requires the listed upgrade to use. In Old Engine, this is the name of the Upgrade. In Dragon Engine, it's the ID of the upgrade specified in player_skill.bin in db.par.
+Skill Name: Name of the Skill (Old Engine Only)
+Skill ID: ID of the Skill (Dragon Engine Only)
+
+
+
+
+
+Type: Timing (26)
+Description: Used in counters, can possibly be used elsewhere.
+Timing: The lower the value, the tighter the timing. The higher the value, the more lenient the timing.
