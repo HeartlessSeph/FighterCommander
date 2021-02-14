@@ -13,23 +13,22 @@ Massive thanks to ChuckP. These are basically his notes.
 Type: Button Press (1), Button Hold (2) & Button Press (Buffered Input) (6)
 
 Button Press Values: The following values can be used. More than one button can be assigned by separating strings with a comma. (Example "Square, Triangle". This acts as an OR)
-"Square"
-"Triangle"
-"Circle"
-"Cross"
-"L1"
-"L2"
-"R1"
-
-Directional Pad Values: Same as above.
-"D-Pad Up"
-"D-Pad Down"
 "D-Pad Right"
 "D-Pad Left"
-"Unknown1"
+"D-Pad Down"
+"D-Pad Up"
+"R2"
+"R1"
+"L2"
+"L1"
+"Cross"
+"Circle"
+"Triangle"
+"Square"
 "Unknown5"
 "Unknown6"
 "Unknown7"
+"Unknown8"
 
 Conditional Values:
 "Input must be Held"
@@ -57,7 +56,7 @@ Description: Places a condition based on the enemies' current state
 State Values:
 "Unk0" (This is Dragon Engine Only)
 "Unk1"
-"Unk2"
+"In Heat Mode"
 "Run Startup to Full Run"
 "Enemy Down, Including getting up Animation"
 "Enemy Standing"
@@ -74,7 +73,7 @@ State Values:
 "Unk16"
 "Unk17"
 "Unk18"
-"Unk19"
+"Near Wall"
 "Unk21"
 "Unk22"
 "Unk24"
@@ -84,7 +83,7 @@ State Values:
 "Unk28"
 "Unk29"
 "Unk30"
-"Unk31"
+"Full Run"
 "Unk32"
 "Unk33"
 "Unk34"

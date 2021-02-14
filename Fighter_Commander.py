@@ -26,6 +26,7 @@ if (len(sys.argv) <= 1):
 	sys.exit()
 
 def bitfield(num):
+	#bitfieldlist = [1 if x=='1' else 0 for x in "{:08b}".format(num)]
 	bitfieldlist = [1 if num & (1 << (7-n)) else 0 for n in range(8)]
 	if len(bitfieldlist) < 8:
 		append = 8 - len(bitfieldlist)
@@ -43,7 +44,7 @@ def bitfieldListMask(bitfield, List):
 			if curstring == "":
 				curstring = List[x]
 			else:
-				curstring = curstring + ", " + List[x]
+				curstring = curstring + "," + List[x]
 		x = x + 1
 	return curstring
 	
@@ -199,20 +200,16 @@ VersionDictionary = OrderedDict() #Stores a list of Version Numbers and their As
 VersionDictionary[7] = "Old Engine"
 VersionDictionary[16] = "Dragon Engine"
 VersionDictionary[17] = "Dragon Engine"
-OEGameDictionary = OrderedDict()
-OEGameDictionary["Yakuza 0 / Kiwami 1"] = 0
-OEGameDictionary["Yakuza 5"] = 1
+OEGameDictionary = {"Yakuza 0 / Kiwami 1": 0, "Yakuza 5": 1}
 jsonfile = OrderedDict() #Stores the dumped json from file.
 FollowUpMoveIdx = [] #Stores Id's of Moves for follow ups
-ButtonPressListDE = ["R1", "L2", "L1", "Cross", "Circle", "Triangle", "Square", "Unknown"]
-ButtonPressListOE = ["Unknown","R1", "L2", "L1", "Cross", "Circle", "Triangle", "Square"]
-DirectionalPadListDE = ["Unknown1","Unknown7","Unknown6","Unknown5","D-Pad Right","D-Pad Left","D-Pad Down","D-Pad Up"]
-DirectionalPadListOE = DirectionalPadListDE
-StateModifiersDictK2 = {0: "Unk0", 1: "Unk1", 2: "Unk2", 3: "Run Startup to Full Run", 4: "Enemy Down, Including getting up Animation", 5: "Enemy Standing", 6: "Unk6", 7: "Enemy Down from the Front", 8: "Enemy Down from Behind", 9: "Unk9", 10: "Unk10", 11: "Unk11", 12: "Unk12", 13: "Unk13", 14: "Unk14", 15: "Unk15", 16: "Unk16", 17: "Unk17", 18: "Unk18", 19: "Unk19", 20: "Unk21", 22: "Unk22", 23: "Unk24", 25: "Unk25", 26: "Unk26", 27: "Unk27", 28: "Unk28", 29: "Unk29", 30: "Unk30", 31: "Unk31", 32: "Unk32", 33: "Unk33", 34: "Unk34", 35: "Unk35", 36: "Unk36", 37: "Unk37", 38: "Unk38", 39: "Unk39", 40: "Unk40"}
+ButtonPressListDE = ["Unknown7","Unknown6","Unknown5","D-Pad Right","D-Pad Left","D-Pad Down","D-Pad Up","R2","R1", "L2", "L1", "Cross", "Circle", "Triangle", "Square", "Unknown8"]
+ButtonPressListOE = ["Unknown8","Unknown7","Unknown6","Unknown5","D-Pad Right","D-Pad Left","D-Pad Down","D-Pad Up","L2","R2", "R1", "L1", "Cross", "Circle", "Triangle", "Square"]
+StateModifiersDictK2 = {0: "Unk0", 1: "Unk1", 2: "In Heat Mode", 3: "Run Startup to Full Run", 4: "Enemy Down, Including getting up Animation", 5: "Enemy Standing", 6: "Unk6", 7: "Enemy Down from the Front", 8: "Enemy Down from Behind", 9: "Unk9", 10: "Unk10", 11: "Unk11", 12: "Unk12", 13: "Unk13", 14: "Unk14", 15: "Unk15", 16: "Unk16", 17: "Unk17", 18: "Unk18", 19: "Near Wall", 20: "Unk21", 22: "Unk22", 23: "Unk24", 25: "Unk25", 26: "Unk26", 27: "Unk27", 28: "Unk28", 29: "Unk29", 30: "Unk30", 31: "Full Run", 32: "Unk32", 33: "Unk33", 34: "Unk34", 35: "Unk35", 36: "Unk36", 37: "Unk37", 38: "Unk38", 39: "Unk39", 40: "Unk40"}
 StateModifiersDictOE = downgradeDictToOE(StateModifiersDictK2)
 QuickstepDictDE = {0: "Front Quickstep", 1: "Left Quickstep", 2: "Back Quickstep", 3: "Right Quickstep"}
 QuickstepDictOE = QuickstepDictDE
-PropertyTypeDictDE = {1: "Button Press", 2: "Button Hold", 3: "Follow Up Start Lock", 4: "Follow Up Lifetime Lock", 5: "State Modifier", 6: "Button Press (Buffered Input)", 7: "Follow Up On Hit", 9: "Analog Deadzone",11: "Heat Action", 12: "Enemy Distance", 19: "Analog Direction", 22: "Quickstep", 23: "Upgrade Unlock", 26: "Timing"}
+PropertyTypeDictDE = {1: "Button Press", 2: "Button Hold", 3: "Follow Up Start Lock", 4: "Follow Up Lifetime Lock", 5: "State Modifier", 6: "Button Press (Buffered Input)", 7: "Follow Up On Hit", 9: "Analog Deadzone",10: "Weapon Category", 11: "Heat Action", 12: "Enemy Distance", 19: "Analog Direction", 22: "Quickstep", 23: "Upgrade Unlock", 26: "Timing"}
 PropertyTypeDictOE = downgradeDictToOE(PropertyTypeDictDE)
 ButtonPressConditionalsDE = ["Input must be Held", "Execute action on Button Release","Unknown3","Unknown4","Unknown5","Unknown6","Unknown7","Unknown8"]
 ButtonPressConditionalsOE = ["Unknown8","Input must be Held", "Execute action on Button Release","Unknown3","Unknown4","Unknown5","Unknown6","Unknown7"]
@@ -225,675 +222,819 @@ parser.add_argument("-sn", "--simplenames", help="Shorten property names to not 
 args = parser.parse_args()
 kfile = args.file
 filecheck = os.path.isfile(kfile)
+extension = os.path.splitext(kfile)[-1].lower()
+nameonly = os.path.splitext(kfile)[0]
 
 
 #File Extract
 if filecheck == True:
 	f = open(kfile, 'rb')
-
-	patchedFile = "" #Init patched file
-
-	curdir =  os.getcwd()
-	mypath = curdir + "\\Fighter Command"
-	if not os.path.isdir(mypath):
-	   os.makedirs(mypath)
-		
-		
-	f.seek(8, 1)#skips filetype and endianess
-	fileversion = int.from_bytes(f.read(1),"little")
-	if fileversion == 0:
-		f.seek(2, 1)
-		fileversion = fileversion = int.from_bytes(f.read(1),"big")
-	else:
-		f.seek(3, 1)
 	
-	#Start of Old Engine Extraction
-	if VersionDictionary[fileversion] == "Old Engine":
-		print("Please choose which Old Engine Game you are extracting from:")
-		print("0 = Yakuza 0/Kiwami 1")
-		print("1 = Yakuza 5")
-		OEGameText = input("Enter a Number: ")
-		OEGame = int(OEGameText)
-		if OEGame > 1:
-			print("An incorrect option was entered. Please restart the program and try again.")
+	if extension == ".json":
+		with open(kfile, 'r', encoding='utf8') as file:
+			jsonfile = json.load(file)
+			if "Old Engine Game" in jsonfile: commandsetname = list(jsonfile.keys())[2] 
+			else: commandsetname = list(jsonfile.keys())[1]
+			x = 0
+			MoveIDXDict = OrderedDict()
+			for move in list(jsonfile[commandsetname]["Move Table"].keys()):
+				MoveIDXDict[x] = move
+				x = x + 1
+			with open(nameonly + " Move Order ID List.json", 'w') as outfile:
+				json.dump(MoveIDXDict, outfile, indent=1, ensure_ascii=False)			
+				
+	
+	if extension == ".cfc":
+		byte1 = int.from_bytes(f.read(4),"big")
+		if byte1 != 1128678217:
+			print("Fileheader not equal to CFCI. Not a valid CFC file?")
 			input("Press ENTER to exit... ")
-			sys.exit()
-		filesize = int.from_bytes(f.read(4),"big")
-		f.seek(filesize)
-		f.seek(-8, 1)
-		NumCommandSets = int.from_bytes(f.read(4),"big")
-		CommandSetTable = int.from_bytes(f.read(4),"big")
-		f.seek(CommandSetTable)
-	
-		a = 0
-		while a < NumCommandSets:
-			CommandSetDictionary["File Version"] = fileversion
-			if OEGame == 0:
-				CommandSetDictionary["Old Engine Game"] = "Yakuza 0 / Kiwami 1"
-			elif OEGame == 1:
-				CommandSetDictionary["Old Engine Game"] = "Yakuza 5"
-			setname = GetCommandSetName(f, "big")
-			FollowUpMoveIdx = []
-			nextset = f.tell() + 4
-			GoToPointer(f, 0, "big")
-			f.seek(4, 1)
-			battlesetname = GetStringFromPointer(f, 0, "big")
-			f.seek(4, 1)
-			CommandSetDictionary[(setname)]["Command Set Name"] = battlesetname
-			NumMoves = int.from_bytes(f.read(4),"big")
-			MoveTablePointer = int.from_bytes(f.read(4),"big")
-			NumWepSets = int.from_bytes(f.read(4),"big")
-			WeaponListPointer = int.from_bytes(f.read(4),"big")
-			GoToPointer(f, MoveTablePointer, "big")
+			sys.exit()			
+		patchedFile = "" #Init patched file
 
-			b = 0
-			firstmove = f.tell()
-			while b < NumMoves:
-				nextmove = f.tell() + 4
+		curdir =  os.getcwd()
+		mypath = curdir + "\\Fighter Command"
+		if not os.path.isdir(mypath):
+		   os.makedirs(mypath)
+			
+			
+		f.seek(4, 1)#skips endianess
+		fileversion = int.from_bytes(f.read(1),"little")
+		if fileversion == 0:
+			f.seek(2, 1)
+			fileversion = fileversion = int.from_bytes(f.read(1),"big")
+		else:
+			f.seek(3, 1)
+		
+		#Start of Old Engine Extraction
+		if VersionDictionary[fileversion] == "Old Engine":
+			print("Please choose which Old Engine Game you are extracting from:")
+			print("0 = Yakuza 0/Kiwami 1")
+			print("1 = Yakuza 5")
+			OEGameText = input("Enter a Number: ")
+			OEGame = int(OEGameText)
+			if OEGame > 1:
+				print("An incorrect option was entered. Please restart the program and try again.")
+				input("Press ENTER to exit... ")
+				sys.exit()
+			filesize = int.from_bytes(f.read(4),"big")
+			f.seek(filesize)
+			f.seek(-8, 1)
+			NumCommandSets = int.from_bytes(f.read(4),"big")
+			CommandSetTable = int.from_bytes(f.read(4),"big")
+			f.seek(CommandSetTable)
+		
+			a = 0
+			while a < NumCommandSets:
+				CommandSetDictionary["File Version"] = fileversion
+				if OEGame == 0:
+					CommandSetDictionary["Old Engine Game"] = "Yakuza 0 / Kiwami 1"
+				elif OEGame == 1:
+					CommandSetDictionary["Old Engine Game"] = "Yakuza 5"
+				setname = GetCommandSetName(f, "big")
+				FollowUpMoveIdx = []
+				nextset = f.tell() + 4
 				GoToPointer(f, 0, "big")
-				movename = GetStringFromPointer(f, 0, "big")
 				f.seek(4, 1)
-				FollowUpMoveIdx.append([b, movename])
-				NumFollowUps = int.from_bytes(f.read(1),"big")
-				if OEGame == 0:
-					NumAdditionalProps = int.from_bytes(f.read(1),"big")
-					AnimTableBool = int.from_bytes(f.read(1),"big")
-				elif OEGame == 1:
-					AnimTableBool = int.from_bytes(f.read(1),"big")
-					NumAdditionalProps = int.from_bytes(f.read(1),"big")
-				movetype = int.from_bytes(f.read(1),"big")
-				AnimPointer = int.from_bytes(f.read(4),"big")
-				f.seek(-4, 1)
-				animshort1 = int.from_bytes(f.read(2),"big")
-				animshort2 = int.from_bytes(f.read(2),"big")
-				FollowUpsPointer = int.from_bytes(f.read(4),"big")
-				if OEGame == 0:
-					AdditionalPropsPointer = int.from_bytes(f.read(4),"big")
-				elif OEGame == 1:
-					AdditionalPropsPointer = AnimPointer
-				
-				#f.seek(12, 1) why was this here again?
-				CommandSetDictionary[(setname)]["Move Table"][movename]["Move Type"] = movetype #+ 1
-				CommandSetDictionary[(setname)]["Move Table"][movename]["Animation Table Bool"] = AnimTableBool
-				
-		#Anim Tables-----------------------------------------------------------------------------------------
-				if AnimTableBool == 1:
-					currentpos = f.tell()
-					f.seek(AnimPointer)
+				battlesetname = GetStringFromPointer(f, 0, "big")
+				f.seek(4, 1)
+				CommandSetDictionary[(setname)]["Command Set Name"] = battlesetname
+				NumMoves = int.from_bytes(f.read(4),"big")
+				MoveTablePointer = int.from_bytes(f.read(4),"big")
+				NumWepSets = int.from_bytes(f.read(4),"big")
+				WeaponListPointer = int.from_bytes(f.read(4),"big")
+				GoToPointer(f, MoveTablePointer, "big")
+
+				b = 0
+				firstmove = f.tell()
+				while b < NumMoves:
+					nextmove = f.tell() + 4
+					GoToPointer(f, 0, "big")
+					movename = GetStringFromPointer(f, 0, "big")
+					f.seek(4, 1)
+					FollowUpMoveIdx.append([b, movename])
+					NumFollowUps = int.from_bytes(f.read(1),"big")
 					if OEGame == 0:
-						NumAnims = int.from_bytes(f.read(2),"big")
+						NumAdditionalProps = int.from_bytes(f.read(1),"big")
+						AnimTableBool = int.from_bytes(f.read(1),"big")
 					elif OEGame == 1:
-						unkval = NumAnims = int.from_bytes(f.read(1),"big")
-						NumAnims = int.from_bytes(f.read(1),"big")
+						AnimTableBool = int.from_bytes(f.read(1),"big")
+						NumAdditionalProps = int.from_bytes(f.read(1),"big")
+					movetype = int.from_bytes(f.read(1),"big")
+					AnimPointer = int.from_bytes(f.read(4),"big")
+					f.seek(-4, 1)
+					animshort1 = int.from_bytes(f.read(2),"big")
+					animshort2 = int.from_bytes(f.read(2),"big")
+					FollowUpsPointer = int.from_bytes(f.read(4),"big")
+					if OEGame == 0:
+						AdditionalPropsPointer = int.from_bytes(f.read(4),"big")
+					elif OEGame == 1:
+						AdditionalPropsPointer = AnimPointer
+					
+					#f.seek(12, 1) why was this here again?
+					CommandSetDictionary[(setname)]["Move Table"][movename]["Move Type"] = movetype #+ 1
+					CommandSetDictionary[(setname)]["Move Table"][movename]["Animation Table Bool"] = AnimTableBool
+					
+			#Anim Tables-----------------------------------------------------------------------------------------
+					if AnimTableBool == 1:
+						currentpos = f.tell()
+						f.seek(AnimPointer)
+						if OEGame == 0:
+							NumAnims = int.from_bytes(f.read(2),"big")
+						elif OEGame == 1:
+							unkval = NumAnims = int.from_bytes(f.read(1),"big")
+							NumAnims = int.from_bytes(f.read(1),"big")
+						f.seek(2, 1)
+						AnimTablePointer = int.from_bytes(f.read(4),"big")
+						f.seek(AnimTablePointer)
+						c = 1
+						while c < NumAnims + 1:
+							currentanimpos = f.tell()
+							GoToPointer(f, 0, "big")
+							AnimName = GetStringFromPointer(f, 0 , "big")
+							f.seek(4, 1)
+							unkbyte1 = int.from_bytes(f.read(1),"little")
+							unkbyte2 = int.from_bytes(f.read(1),"little")
+							unkbyte3 = int.from_bytes(f.read(1),"little")
+							unkbyte4 = int.from_bytes(f.read(1),"little")
+							CommandSetDictionary[(setname)]["Move Table"][movename]["Animation Table"]["Animation " + str(c)]["Animation Used"] = AnimName
+							CommandSetDictionary[(setname)]["Move Table"][movename]["Animation Table"]["Animation " + str(c)]["Unknown byte 1"] = unkbyte1
+							CommandSetDictionary[(setname)]["Move Table"][movename]["Animation Table"]["Animation " + str(c)]["Unknown byte 2"] = unkbyte2
+							CommandSetDictionary[(setname)]["Move Table"][movename]["Animation Table"]["Animation " + str(c)]["Unknown byte 3"] = unkbyte3
+							CommandSetDictionary[(setname)]["Move Table"][movename]["Animation Table"]["Animation " + str(c)]["Unknown byte 4"] = unkbyte4
+							f.seek(currentanimpos+4)
+							c = c + 1
+						f.seek(currentpos)
+					elif movetype == 3:
+						CommandSetDictionary[(setname)]["Move Table"][movename]["Moveset IDx for Sync"] = animshort1
+						CommandSetDictionary[(setname)]["Move Table"][movename]["Unknown Short"] = animshort2
+					elif movetype == 2:
+						CommandSetDictionary[(setname)]["Move Table"][movename]["Moveset IDx"] = animshort1 
+						CommandSetDictionary[(setname)]["Move Table"][movename]["Move IDx to Play in Moveset"] = animshort2
+					else:
+						AnimName = GetStringFromPointer(f, AnimPointer, "big")
+						CommandSetDictionary[(setname)]["Move Table"][movename]["Animation Used"] = AnimName
+			#Anim Tables-----------------------------------------------------------------------------------------
+
+
+			#Follow Up Tables-----------------------------------------------------------------------------------------
+					f.seek(FollowUpsPointer)
+					c = 1
+					while c < NumFollowUps + 1:
+						nextfollowup = f.tell() + 4
+						GoToPointer(f, 0, "big")
+						numfollowupprops = int.from_bytes(f.read(2),"big")
+						idoffollowup = int.from_bytes(f.read(2),"big")
+						CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up to"] = idoffollowup
+						GoToPointer(f, 0, "big")
+						d = 1
+						while d < numfollowupprops + 1:
+							nextproperty = f.tell() + 4
+							GoToPointer(f, 0, "big")
+							propint1 = int.from_bytes(f.read(4),"big")
+							f.seek(-4, 1)
+							propbyte1 = int.from_bytes(f.read(1),"big")
+							propbyte2 = int.from_bytes(f.read(1),"big")
+							propbyte3 = int.from_bytes(f.read(1),"big")
+							propbyte4 = int.from_bytes(f.read(1),"big")
+							propint2 = int.from_bytes(f.read(4),"big")
+							f.seek(-4, 1)
+							propbyte5 = int.from_bytes(f.read(1),"big")
+							propbyte6 = int.from_bytes(f.read(1),"big")
+							propbyte7 = int.from_bytes(f.read(1),"big")
+							propbyte8 = int.from_bytes(f.read(1),"big")
+							f.seek(-4,1)
+							propshort1 = int.from_bytes(f.read(2),"big")
+							propshort2 = int.from_bytes(f.read(2),"big")
+							if args.simplenames: typedes = ""
+							else: 
+								if propint1 in PropertyTypeDictOE:
+									typedes = "| Type " + str(propint1) + " = " + PropertyTypeDictOE[propint1]
+								else: typedes = ""
+							
+							
+							if propint1 == 10:						
+								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Property Type"] = propint1 #+ 1
+								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Hact Name"] = GetStringFromPointer(f, propint2, "big")							
+							elif propint1 == 22:						
+								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Property Type"] = propint1 #+ 1
+								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Skill Name"] = GetStringFromPointer(f, propint2, "big")
+							elif propint1 == 0:
+								ButtonPressBitmask1 = bitfield(propbyte8)
+								ButtonPressBitmask2 = bitfield(propbyte7)
+								ButtonPressBitmask2.extend(ButtonPressBitmask1)
+								ButtonPressBitmask = ButtonPressBitmask2
+								ConditionalsBitmask = bitfield(propbyte5)
+								buttonpress = bitfieldListMask(ButtonPressBitmask, ButtonPressListOE)
+								conditional = bitfieldListMask(ConditionalsBitmask, ButtonPressConditionalsOE)
+								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Property Type"] = propint1
+								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Button Press"] = buttonpress
+								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Conditionals"] = conditional
+							elif propint1 == 1:						
+								ButtonPressBitmask1 = bitfield(propbyte8)
+								ButtonPressBitmask2 = bitfield(propbyte7)
+								ButtonPressBitmask2.extend(ButtonPressBitmask1)
+								ButtonPressBitmask = ButtonPressBitmask2
+								ConditionalsBitmask = bitfield(propbyte5)
+								buttonpress = bitfieldListMask(ButtonPressBitmask, ButtonPressListOE)
+								conditional = bitfieldListMask(ConditionalsBitmask, ButtonPressConditionalsOE)
+								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Property Type"] = propint1
+								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Button Press"] = buttonpress
+								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Conditionals"] = conditional
+							elif propint1 == 2:						
+								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Property Type"] = propint1
+								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Unk Byte 1"] = propbyte8
+							elif propint1 == 3:						
+								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Property Type"] = propint1
+								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Unk Byte 1"] = propbyte8
+							elif propint1 == 4:						
+								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Property Type"] = propint1
+								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["State Type"] = StateModifiersDictOE[propbyte8]
+								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Unk Byte 4"] = propbyte5
+							elif propint1 == 5:						
+								ButtonPressBitmask1 = bitfield(propbyte8)
+								ButtonPressBitmask2 = bitfield(propbyte7)
+								ButtonPressBitmask2.extend(ButtonPressBitmask1)
+								ButtonPressBitmask = ButtonPressBitmask2
+								ConditionalsBitmask = bitfield(propbyte5)
+								buttonpress = bitfieldListMask(ButtonPressBitmask, ButtonPressListOE)
+								conditional = bitfieldListMask(ConditionalsBitmask, ButtonPressConditionalsOE)
+								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Property Type"] = propint1
+								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Button Press"] = buttonpress
+								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Conditionals"] = conditional
+							elif propint1 == 6:						
+								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Property Type"] = propint1
+								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Unk Byte 1"] = propbyte8
+							elif propint1 == 8:						
+								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Property Type"] = propint1
+								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Unk Byte 1"] = propbyte5
+							elif propint1 == 11:						
+								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Property Type"] = propint1
+								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Enemy Distance"] = propshort2
+								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Unk Byte 4"] = propbyte5
+							elif propint1 == 18:						
+								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Property Type"] = propint1
+								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Unk Byte"] = propbyte8
+								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Analog Direction"] = propbyte7
+								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Conditions"] = propbyte5
+							elif propint1 == 21:						
+								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Property Type"] = propint1
+								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Quickstep Direction"] = QuickstepDictOE[propbyte8]
+							elif propint1 == 25:						
+								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Property Type"] = propint1
+								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Timing"] = propint2
+							elif propint1 == 33:
+								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Property Type"] = propint1
+								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Heat Gear"] = propbyte8 + 1
+							else:
+								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d)]["Property Type"] = propint1 #+ 1
+								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d)]["Unk Byte 1"] = propbyte8
+								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d)]["Unk Byte 2"] = propbyte7
+								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d)]["Unk Byte 3"] = propbyte6
+								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d)]["Unk Byte 4"] = propbyte5							
+							f.seek(nextproperty)
+							d = d + 1
+						c = c + 1
+						f.seek(nextfollowup)
+			#Follow Up Tables-----------------------------------------------------------------------------------------
+			
+			
+			#Additional Move Properties-------------------------------------------------------------------------------
+					f.seek(AdditionalPropsPointer)
+					c = 1
+					while c < NumAdditionalProps + 1:
+						nextadditionalprop = f.tell() + 4
+						GoToPointer(f, 0, "big")
+						movepropshort1 = int.from_bytes(f.read(2),"big")
+						movepropshort2 = int.from_bytes(f.read(2),"big")
+						CommandSetDictionary[(setname)]["Move Table"][movename]["Additional Properties Table"]["Additional Property " + str(c)]["Unk Short 1"] = movepropshort1
+						CommandSetDictionary[(setname)]["Move Table"][movename]["Additional Properties Table"]["Additional Property " + str(c)]["Unk Short 2"] = movepropshort2
+						c = c + 1
+						f.seek(nextadditionalprop)		
+			#Additional Move Properties-------------------------------------------------------------------------------
+					f.seek(nextmove)
+					b = b + 1
+					
+					
+			#Re-Iterates through the moves to replace IDx of follow up with String		
+				f.seek(firstmove)
+				b = 0	
+				while b < NumMoves:
+					nextmove = f.tell() + 4
+					GoToPointer(f, 0, "big")
+					movename = GetStringFromPointer(f, 0, "big")
+					f.seek(4, 1)
+					NumFollowUps = int.from_bytes(f.read(1),"big")
+					f.seek(7, 1)
+					FollowUpsPointer = int.from_bytes(f.read(4),"big")
+					f.seek(FollowUpsPointer)
+					c = 1
+					while c < NumFollowUps + 1:
+						nextfollowup = f.tell() + 4
+						GoToPointer(f,0,"big")
+						numfollowupprops = int.from_bytes(f.read(2),"big")
+						idoffollowup = int.from_bytes(f.read(2),"big")
+						followupstring = GetMovefromIDx(idoffollowup, FollowUpMoveIdx)
+						f.seek(4, 1)
+						CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up to"] = followupstring
+						GoToPointer(f,0,"big")
+						c = c + 1
+						f.seek(nextfollowup)
+					f.seek(nextmove)
+					b = b + 1
+			#End of Re-Iteration
+
+				f.seek(WeaponListPointer)
+				b = 1
+				while b < NumWepSets + 1:
+					nextwepset = f.tell() + 4
+					GoToPointer(f,0,"big")
+					f.seek(4,1)
+					wepcommandset = int.from_bytes(f.read(4),"big")
+					f.seek(-4,1)
+					if wepcommandset == 0:
+						wepcommandset = "Zero"
+					else:
+						wepcommandset = GetStringFromPointer(f,0,"big")
+					f.seek(-4,1)
+					GoToPointer(f,0,"big")
+					numwepproperties = int.from_bytes(f.read(2),"big")
 					f.seek(2, 1)
-					AnimTablePointer = int.from_bytes(f.read(4),"big")
-					f.seek(AnimTablePointer)
+					WepPropertiesPointer = int.from_bytes(f.read(4),"big")
+					f.seek(WepPropertiesPointer)
+					CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Command Set Name for Weapon Moveset"] = wepcommandset
 					c = 1
-					while c < NumAnims + 1:
-						currentanimpos = f.tell()
-						GoToPointer(f, 0, "big")
-						AnimName = GetStringFromPointer(f, 0 , "big")
-						f.seek(4, 1)
-						unkbyte1 = int.from_bytes(f.read(1),"little")
-						unkbyte2 = int.from_bytes(f.read(1),"little")
-						unkbyte3 = int.from_bytes(f.read(1),"little")
-						unkbyte4 = int.from_bytes(f.read(1),"little")
-						CommandSetDictionary[(setname)]["Move Table"][movename]["Animation Table"]["Animation " + str(c)]["Animation Used"] = AnimName
-						CommandSetDictionary[(setname)]["Move Table"][movename]["Animation Table"]["Animation " + str(c)]["Unknown byte 1"] = unkbyte1
-						CommandSetDictionary[(setname)]["Move Table"][movename]["Animation Table"]["Animation " + str(c)]["Unknown byte 2"] = unkbyte2
-						CommandSetDictionary[(setname)]["Move Table"][movename]["Animation Table"]["Animation " + str(c)]["Unknown byte 3"] = unkbyte3
-						CommandSetDictionary[(setname)]["Move Table"][movename]["Animation Table"]["Animation " + str(c)]["Unknown byte 4"] = unkbyte4
-						f.seek(currentanimpos+4)
-						c = c + 1
-					f.seek(currentpos)
-				elif movetype == 3:
-					CommandSetDictionary[(setname)]["Move Table"][movename]["Moveset IDx for Sync"] = animshort1
-					CommandSetDictionary[(setname)]["Move Table"][movename]["Unknown Short"] = animshort2
-				elif movetype == 2:
-					CommandSetDictionary[(setname)]["Move Table"][movename]["Moveset IDx"] = animshort1 
-					CommandSetDictionary[(setname)]["Move Table"][movename]["Unknown Short"] = animshort2
-				else:
-					AnimName = GetStringFromPointer(f, AnimPointer, "big")
-					CommandSetDictionary[(setname)]["Move Table"][movename]["Animation Used"] = AnimName
-		#Anim Tables-----------------------------------------------------------------------------------------
-
-
-		#Follow Up Tables-----------------------------------------------------------------------------------------
-				f.seek(FollowUpsPointer)
-				c = 1
-				while c < NumFollowUps + 1:
-					nextfollowup = f.tell() + 4
-					GoToPointer(f, 0, "big")
-					numfollowupprops = int.from_bytes(f.read(2),"big")
-					idoffollowup = int.from_bytes(f.read(2),"big")
-					CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up to"] = idoffollowup
-					GoToPointer(f, 0, "big")
-					d = 1
-					while d < numfollowupprops + 1:
-						nextproperty = f.tell() + 4
-						GoToPointer(f, 0, "big")
-						propint1 = int.from_bytes(f.read(4),"big")
-						f.seek(-4, 1)
-						propbyte1 = int.from_bytes(f.read(1),"big")
-						propbyte2 = int.from_bytes(f.read(1),"big")
-						propbyte3 = int.from_bytes(f.read(1),"big")
-						propbyte4 = int.from_bytes(f.read(1),"big")
-						propint2 = int.from_bytes(f.read(4),"big")
-						f.seek(-4, 1)
-						propbyte5 = int.from_bytes(f.read(1),"big")
-						propbyte6 = int.from_bytes(f.read(1),"big")
-						propbyte7 = int.from_bytes(f.read(1),"big")
-						propbyte8 = int.from_bytes(f.read(1),"big")
+					while c < numwepproperties + 1:
+						nextweppos = f.tell() + 4
+						GoToPointer(f,0,"big")
+						wepbyte1 = int.from_bytes(f.read(1),"little")
+						wepbyte2 = int.from_bytes(f.read(1),"little")
+						wepbyte3 = int.from_bytes(f.read(1),"little")
+						wepbyte4 = int.from_bytes(f.read(1),"little")
 						f.seek(-4,1)
-						propshort1 = int.from_bytes(f.read(2),"big")
-						propshort2 = int.from_bytes(f.read(2),"big")
+						wepshort1 = int.from_bytes(f.read(2),"big")
+						wepshort2 = int.from_bytes(f.read(2),"big")
+						f.seek(-4,1)
+						wepint1 = int.from_bytes(f.read(4),"big")
+						wepshort3 = int.from_bytes(f.read(2),"big")
+						wepshort4 = int.from_bytes(f.read(2),"big")
+						f.seek(-4,1)
+						wepint2 = int.from_bytes(f.read(4),"big")
+						f.seek(-4,1)
+						wepbyte5 = int.from_bytes(f.read(1),"little")
+						wepbyte6 = int.from_bytes(f.read(1),"little")
+						wepbyte7 = int.from_bytes(f.read(1),"little")
+						wepbyte8 = int.from_bytes(f.read(1),"little")
 						if args.simplenames: typedes = ""
 						else: 
-							if propint1 in PropertyTypeDictOE:
-								typedes = "| Type " + str(propint1) + " = " + PropertyTypeDictOE[propint1]
+							if wepint1 in PropertyTypeDictOE:
+								typedes = "| Type " + str(wepint1) + " = " + PropertyTypeDictOE[wepint1]
 							else: typedes = ""
-						
-						
-						if propint1 == 10:						
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Property Type"] = propint1 #+ 1
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Hact Name"] = GetStringFromPointer(f, propint2, "big")							
-						elif propint1 == 22:						
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Property Type"] = propint1 #+ 1
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Skill Name"] = GetStringFromPointer(f, propint2, "big")
-						elif propint1 == 0:
-							ButtonPressBitmask = bitfield(propbyte8)
-							DPadBitmask = bitfield(propbyte7)
-							ConditionalsBitmask = bitfield(propbyte5)
+
+						if wepint1 == 9:
+							CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"]["Property " + str(c) + typedes]["Property Type"] = wepint1
+							CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"]["Property " + str(c) + typedes]["Weapon Category ID"] = wepshort4
+							CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"]["Property " + str(c) + typedes]["Bitmask Byte 1"] = wepbyte6
+							CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"]["Property " + str(c) + typedes]["Bitmask Byte 2"] = wepbyte5
+						elif wepint1 == 0 or wepint1 == 1 or wepint1 == 5:
+							ButtonPressBitmask1 = bitfield(wepbyte8)
+							ButtonPressBitmask2 = bitfield(wepbyte7)
+							ButtonPressBitmask2.extend(ButtonPressBitmask1)
+							ButtonPressBitmask = ButtonPressBitmask2
+							ConditionalsBitmask = bitfield(wepbyte5)
 							buttonpress = bitfieldListMask(ButtonPressBitmask, ButtonPressListOE)
-							dpad = bitfieldListMask(DPadBitmask, DirectionalPadListOE)
 							conditional = bitfieldListMask(ConditionalsBitmask, ButtonPressConditionalsOE)
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Property Type"] = propint1
+							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Property Type"] = wepint1
 							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Button Press"] = buttonpress
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Directional Pad"] = dpad
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Conditionals"] = conditional
-						elif propint1 == 1:						
-							ButtonPressBitmask = bitfield(propbyte8)
-							DPadBitmask = bitfield(propbyte7)
-							ConditionalsBitmask = bitfield(propbyte5)
-							buttonpress = bitfieldListMask(ButtonPressBitmask, ButtonPressListOE)
-							dpad = bitfieldListMask(DPadBitmask, DirectionalPadListOE)
-							conditional = bitfieldListMask(ConditionalsBitmask, ButtonPressConditionalsOE)
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Property Type"] = propint1
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Button Press"] = buttonpress
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Directional Pad"] = dpad
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Conditionals"] = conditional
-						elif propint1 == 2:						
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Property Type"] = propint1
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Unk Byte 1"] = propbyte8
-						elif propint1 == 3:						
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Property Type"] = propint1
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Unk Byte 1"] = propbyte8
-						elif propint1 == 4:						
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Property Type"] = propint1
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["State Type"] = StateModifiersDictOE[propbyte8]
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Unk Byte 4"] = propbyte5
-						elif propint1 == 5:						
-							ButtonPressBitmask = bitfield(propbyte8)
-							DPadBitmask = bitfield(propbyte7)
-							ConditionalsBitmask = bitfield(propbyte5)
-							buttonpress = bitfieldListMask(ButtonPressBitmask, ButtonPressListOE)
-							dpad = bitfieldListMask(DPadBitmask, DirectionalPadListOE)
-							conditional = bitfieldListMask(ConditionalsBitmask, ButtonPressConditionalsOE)
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Property Type"] = propint1
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Button Press"] = buttonpress
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Directional Pad"] = dpad
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Conditionals"] = conditional
-						elif propint1 == 6:						
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Property Type"] = propint1
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Unk Byte 1"] = propbyte8
-						elif propint1 == 8:						
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Property Type"] = propint1
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Unk Byte 1"] = propbyte5
-						elif propint1 == 11:						
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Property Type"] = propint1
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Enemy Distance"] = propshort2
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Unk Byte 4"] = propbyte5
-						elif propint1 == 18:						
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Property Type"] = propint1
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Unk Byte"] = propbyte8
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Analog Direction"] = propbyte7
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Conditions"] = propbyte5
-						elif propint1 == 21:						
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Property Type"] = propint1
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Quickstep Direction"] = QuickstepDictOE[propbyte8]
-						elif propint1 == 25:						
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Property Type"] = propint1
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Timing"] = propint2
+							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Conditionals"] = conditional									
+						elif wepint1 == 2:
+							CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"]["Property " + str(c) + typedes]["Property Type"] = wepint1
+							CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"]["Property " + str(c) + typedes]["Unk Byte 1"] = wepbyte8
+						elif wepint1 == 3:
+							CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"]["Property " + str(c) + typedes]["Property Type"] = wepint1
+							CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"]["Property " + str(c) + typedes]["Unk Byte 1"] = wepbyte8				
+						elif wepint1 == 4:
+							CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"]["Property " + str(c) + typedes]["Property Type"] = wepint1
+							CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"]["Property " + str(c) + typedes]["State Type"] = StateModifiersDictOE[wepbyte8]
+							CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"]["Property " + str(c) + typedes]["Unk Byte 4"] = wepbyte5
+						elif wepint1 == 6:
+							CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"]["Property " + str(c) + typedes]["Property Type"] = wepint1
+							CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"]["Property " + str(c) + typedes]["Unk Byte 1"] = wepbyte8
+						elif wepint1 == 8:
+							CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"]["Property " + str(c) + typedes]["Property Type"] = wepint1
+							CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"]["Property " + str(c) + typedes]["Unk Byte 1"] = wepbyte5
+						elif wepint1 == 11:
+							CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"]["Property " + str(c) + typedes]["Property Type"] = wepint1
+							CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"]["Property " + str(c) + typedes]["Enemy Distance"] = wepshort4
+							CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"]["Property " + str(c) + typedes]["Unk Byte 4"] = wepbyte5
+						elif wepint1 == 18:
+							CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"]["Property " + str(c) + typedes]["Property Type"] = wepint1
+							CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"]["Property " + str(c) + typedes]["Unk Byte"] = wepbyte8
+							CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"]["Property " + str(c) + typedes]["Analog Direction"] = wepbyte7
+							CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"]["Property " + str(c) + typedes]["Conditions"] = wepbyte5
+						elif wepint1 == 21:
+							CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"]["Property " + str(c) + typedes]["Property Type"] = wepint1
+							CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"]["Property " + str(c) + typedes]["Quickstep Direction"] = QuickstepDictOE[wepbyte5]
+						elif wepint1 == 22:
+							CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"]["Property " + str(c) + typedes]["Property Type"] = wepint1
+							CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"]["Property " + str(c) + typedes]["Skill ID"] = wepint2
+						elif wepint1 == 25:
+							CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"]["Property " + str(c) + typedes]["Property Type"] = wepint1
+							CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"]["Property " + str(c) + typedes]["Timing"] = wepint2
 						else:
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d)]["Property Type"] = propint1 #+ 1
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d)]["Unk Byte 1"] = propbyte8
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d)]["Unk Byte 2"] = propbyte7
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d)]["Unk Byte 3"] = propbyte6
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d)]["Unk Byte 4"] = propbyte5							
-						f.seek(nextproperty)
-						d = d + 1
-					c = c + 1
-					f.seek(nextfollowup)
-		#Follow Up Tables-----------------------------------------------------------------------------------------
-		
-		
-		#Additional Move Properties-------------------------------------------------------------------------------
-				f.seek(AdditionalPropsPointer)
-				c = 1
-				while c < NumAdditionalProps + 1:
-					nextadditionalprop = f.tell() + 4
-					GoToPointer(f, 0, "big")
-					movepropshort1 = int.from_bytes(f.read(2),"big")
-					movepropshort2 = int.from_bytes(f.read(2),"big")
-					CommandSetDictionary[(setname)]["Move Table"][movename]["Additional Properties Table"]["Additional Property " + str(c)]["Unk Short 1"] = movepropshort1
-					CommandSetDictionary[(setname)]["Move Table"][movename]["Additional Properties Table"]["Additional Property " + str(c)]["Unk Short 2"] = movepropshort2
-					c = c + 1
-					f.seek(nextadditionalprop)		
-		#Additional Move Properties-------------------------------------------------------------------------------
-				f.seek(nextmove)
-				b = b + 1
-				
-				
-		#Re-Iterates through the moves to replace IDx of follow up with String		
-			f.seek(firstmove)
-			b = 0	
-			while b < NumMoves:
-				nextmove = f.tell() + 4
-				GoToPointer(f, 0, "big")
-				movename = GetStringFromPointer(f, 0, "big")
-				f.seek(4, 1)
-				NumFollowUps = int.from_bytes(f.read(1),"big")
-				f.seek(7, 1)
-				FollowUpsPointer = int.from_bytes(f.read(4),"big")
-				f.seek(FollowUpsPointer)
-				c = 1
-				while c < NumFollowUps + 1:
-					nextfollowup = f.tell() + 4
-					GoToPointer(f,0,"big")
-					numfollowupprops = int.from_bytes(f.read(2),"big")
-					idoffollowup = int.from_bytes(f.read(2),"big")
-					followupstring = GetMovefromIDx(idoffollowup, FollowUpMoveIdx)
-					f.seek(4, 1)
-					CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up to"] = followupstring
-					GoToPointer(f,0,"big")
-					c = c + 1
-					f.seek(nextfollowup)
-				f.seek(nextmove)
-				b = b + 1
-		#End of Re-Iteration
-
-			f.seek(WeaponListPointer)
-			b = 1
-			while b < NumWepSets + 1:
-				nextwepset = f.tell() + 4
-				GoToPointer(f,0,"big")
-				f.seek(4,1)
-				wepcommandset = int.from_bytes(f.read(4),"big")
-				f.seek(-4,1)
-				if wepcommandset == 0:
-					wepcommandset = "Zero"
-				else:
-					wepcommandset = GetStringFromPointer(f,0,"big")
-				f.seek(-4,1)
-				GoToPointer(f,0,"big")
-				numwepproperties = int.from_bytes(f.read(2),"big")
-				f.seek(2, 1)
-				WepPropertiesPointer = int.from_bytes(f.read(4),"big")
-				f.seek(WepPropertiesPointer)
-				CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Command Set Name for Weapon Moveset"] = wepcommandset
-				c = 1
-				while c < numwepproperties + 1:
-					nextweppos = f.tell() + 4
-					GoToPointer(f,0,"big")
-					wepshort1 = int.from_bytes(f.read(2),"big")
-					wepshort2 = int.from_bytes(f.read(2),"big")
-					wepshort3 = int.from_bytes(f.read(2),"big")
-					wepshort4 = int.from_bytes(f.read(2),"big")
-					CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"]["Property " + str(c)]["Weapon Category ID"] = wepshort4
-					CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"]["Property " + str(c)]["Short Property 2"] = wepshort3
-					CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"]["Property " + str(c)]["Short Property 3"] = wepshort2
-					CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"]["Property " + str(c)]["Short Property 4"] = wepshort1
-					c = c + 1
-					f.seek(nextweppos)
-				f.seek(nextwepset)
-				b = b + 1
-			f.seek(nextset)
-			CommandSetOrderIDxDictionary[CommandSetOrderIDx] = setname
-			CommandSetOrderIDx = CommandSetOrderIDx + 1
-			
-			with open(mypath + "\\" + str(setname) + ".json", 'w') as outfile:
-				json.dump(CommandSetDictionary, outfile, indent=2, ensure_ascii=False)
-			CommandSetDictionary.clear()
-			a = a + 1
-			
-		with open("Command Set Order List.json", 'w') as outfile:
-			json.dump(CommandSetOrderIDxDictionary, outfile, indent=1, ensure_ascii=False)
-	
-	
-	
-	
-	
-	
-
-	
-	#Start of Dragon Engine Extraction
-	if VersionDictionary[fileversion] == "Dragon Engine":
-		filesize = int.from_bytes(f.read(4),"little")
-		f.seek(filesize)
-		f.seek(-8, 1)
-		NumCommandSets = int.from_bytes(f.read(4),"little")
-		f.seek(-12, 1)
-		CommandSetTable = int.from_bytes(f.read(4),"little")
-		f.seek(CommandSetTable)
-
-		a = 0
-		while a < NumCommandSets:
-			CommandSetDictionary["File Version"] = fileversion
-			setname = GetCommandSetName(f)
-			FollowUpMoveIdx = []
-			nextset = f.tell() + 8
-			GoToPointer(f)
-			f.seek(8, 1)
-			CommandSetID = int.from_bytes(f.read(4),"little")
-			CommandSetIDDictionary[(setname)]= CommandSetID#
-			CommandSetDictionary[(setname)]["Command Set ID"] = CommandSetID
-			f.seek(4, 1)
-			MoveTablePointer = int.from_bytes(f.read(4),"little")
-			f.seek(4, 1)
-			WeaponListPointer = int.from_bytes(f.read(4),"little")
-			f.seek(4, 1)
-			NumMoves = int.from_bytes(f.read(2),"little")
-			NumWepSets = int.from_bytes(f.read(2),"little")
-			GoToPointer(f, MoveTablePointer)
-
-			b = 0
-			firstmove = f.tell()
-			while b < NumMoves:
-				nextmove = f.tell() + 8
-				GoToPointer(f)
-				movename = GetStringFromPointer(f)
-				FollowUpMoveIdx.append([b, movename])
-				f.seek(8, 1)
-				AnimPointer = int.from_bytes(f.read(4),"little")
-				f.seek(-4, 1)
-				animbyte1 = int.from_bytes(f.read(1),"little")
-				animbyte2 = int.from_bytes(f.read(1),"little")
-				animbyte3 = int.from_bytes(f.read(1),"little")
-				animbyte4 = int.from_bytes(f.read(1),"little")
-				f.seek(-4, 1)
-				animshort1 = int.from_bytes(f.read(2),"little")
-				animshort2 = int.from_bytes(f.read(2),"little")
-				animbyte5 = int.from_bytes(f.read(1),"little")
-				animbyte6 = int.from_bytes(f.read(1),"little")
-				animbyte7 = int.from_bytes(f.read(1),"little")
-				animbyte8 = int.from_bytes(f.read(1),"little")
-				FollowUpsPointer = int.from_bytes(f.read(4),"little")
-				f.seek(12, 1)
-				NumFollowUps = int.from_bytes(f.read(2),"little")
-				AnimTableBool = int.from_bytes(f.read(1),"little")
-				movetype = int.from_bytes(f.read(1),"little")
-				CommandSetDictionary[(setname)]["Move Table"][movename]["Move Type"] = movetype
-				CommandSetDictionary[(setname)]["Move Table"][movename]["Animation Table Bool"] = AnimTableBool
-				
-		#Anim Tables-----------------------------------------------------------------------------------------
-				if AnimTableBool == 1:
-					currentpos = f.tell()
-					f.seek(AnimPointer)
-					AnimTablePointer = int.from_bytes(f.read(4),"little")
-					f.seek(5, 1)
-					NumAnims = int.from_bytes(f.read(1),"little")
-					f.seek(AnimTablePointer)
-					c = 1
-					while c < NumAnims + 1:
-						currentanimpos = f.tell()
-						GoToPointer(f)
-						AnimName = GetStringFromPointer(f)
-						f.seek(4, 1)
-						unkuint32 = int.from_bytes(f.read(4),"little")
-						unkbyte1 = int.from_bytes(f.read(1),"little")
-						unkbyte2 = int.from_bytes(f.read(1),"little")
-						unkbyte3 = int.from_bytes(f.read(1),"little")
-						unkbyte4 = int.from_bytes(f.read(1),"little")
-						unkbyte5 = int.from_bytes(f.read(1),"little")
-						unkbyte6 = int.from_bytes(f.read(1),"little")
-						unkbyte7 = int.from_bytes(f.read(1),"little")
-						unkbyte8 = int.from_bytes(f.read(1),"little")
-						CommandSetDictionary[(setname)]["Move Table"][movename]["Animation Table"]["Animation " + str(c)]["Animation Used"] = AnimName
-						CommandSetDictionary[(setname)]["Move Table"][movename]["Animation Table"]["Animation " + str(c)]["Unknown uint32"] = unkuint32
-						CommandSetDictionary[(setname)]["Move Table"][movename]["Animation Table"]["Animation " + str(c)]["Unknown byte 1"] = unkbyte1
-						CommandSetDictionary[(setname)]["Move Table"][movename]["Animation Table"]["Animation " + str(c)]["Unknown byte 2"] = unkbyte2
-						CommandSetDictionary[(setname)]["Move Table"][movename]["Animation Table"]["Animation " + str(c)]["Unknown byte 3"] = unkbyte3
-						CommandSetDictionary[(setname)]["Move Table"][movename]["Animation Table"]["Animation " + str(c)]["Unknown byte 4"] = unkbyte4
-						CommandSetDictionary[(setname)]["Move Table"][movename]["Animation Table"]["Animation " + str(c)]["Unknown byte 5"] = unkbyte5
-						CommandSetDictionary[(setname)]["Move Table"][movename]["Animation Table"]["Animation " + str(c)]["Unknown byte 6"] = unkbyte6
-						CommandSetDictionary[(setname)]["Move Table"][movename]["Animation Table"]["Animation " + str(c)]["Unknown byte 7"] = unkbyte7
-						CommandSetDictionary[(setname)]["Move Table"][movename]["Animation Table"]["Animation " + str(c)]["Unknown byte 8"] = unkbyte8
-						f.seek(currentanimpos+8)
+							CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"]["Property " + str(c)]["Property Type"] = wepint1
+							CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"]["Property " + str(c)]["Unk Byte 1"] = wepbyte8
+							CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"]["Property " + str(c)]["Unk Byte 2"] = wepbyte7
+							CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"]["Property " + str(c)]["Unk Byte 3"] = wepbyte6
+							CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"]["Property " + str(c)]["Unk Byte 4"] = wepbyte5
 						c = c + 1
-					f.seek(currentpos)
-				elif movetype == 4:
-					CommandSetDictionary[(setname)]["Move Table"][movename]["Animation Related Byte 1"] = animbyte1
-					CommandSetDictionary[(setname)]["Move Table"][movename]["Animation Related Byte 2"] = animbyte2
-					CommandSetDictionary[(setname)]["Move Table"][movename]["Animation Related Byte 3"] = animbyte3
-					CommandSetDictionary[(setname)]["Move Table"][movename]["Animation Related Byte 4"] = animbyte4
-					CommandSetDictionary[(setname)]["Move Table"][movename]["Animation Related Byte 5"] = animbyte5
-					CommandSetDictionary[(setname)]["Move Table"][movename]["Animation Related Byte 6"] = animbyte6
-					CommandSetDictionary[(setname)]["Move Table"][movename]["Animation Related Byte 7"] = animbyte7
-					CommandSetDictionary[(setname)]["Move Table"][movename]["Animation Related Byte 8"] = animbyte8
-				elif movetype == 3:
-					CommandSetDictionary[(setname)]["Move Table"][movename]["Moveset IDx"] = animshort1
-					CommandSetDictionary[(setname)]["Move Table"][movename]["Unknown Short"] = animshort2
-				elif movetype == 17:
-					useless = "useless"
-				else:
-					AnimName = GetStringFromPointer(f, AnimPointer)
-					CommandSetDictionary[(setname)]["Move Table"][movename]["Animation Used"] = AnimName
-		#Anim Tables-----------------------------------------------------------------------------------------
+						f.seek(nextweppos)
+					f.seek(nextwepset)
+					b = b + 1
+				f.seek(nextset)
+				CommandSetOrderIDxDictionary[CommandSetOrderIDx] = setname
+				CommandSetOrderIDx = CommandSetOrderIDx + 1
+				
+				with open(mypath + "\\" + str(setname) + ".json", 'w') as outfile:
+					json.dump(CommandSetDictionary, outfile, indent=2, ensure_ascii=False)
+				CommandSetDictionary.clear()
+				a = a + 1
+				
+			with open("Command Set Order List.json", 'w') as outfile:
+				json.dump(CommandSetOrderIDxDictionary, outfile, indent=1, ensure_ascii=False)
+		
+		
+		
+		
+		
+		
+
+		
+		#Start of Dragon Engine Extraction
+		if VersionDictionary[fileversion] == "Dragon Engine":
+			filesize = int.from_bytes(f.read(4),"little")
+			f.seek(filesize)
+			f.seek(-8, 1)
+			NumCommandSets = int.from_bytes(f.read(4),"little")
+			f.seek(-12, 1)
+			CommandSetTable = int.from_bytes(f.read(4),"little")
+			f.seek(CommandSetTable)
+
+			a = 0
+			while a < NumCommandSets:
+				CommandSetDictionary["File Version"] = fileversion
+				setname = GetCommandSetName(f)
+				FollowUpMoveIdx = []
+				nextset = f.tell() + 8
+				GoToPointer(f)
+				f.seek(8, 1)
+				CommandSetID = int.from_bytes(f.read(4),"little")
+				CommandSetIDDictionary[(setname)]= CommandSetID#
+				CommandSetDictionary[(setname)]["Command Set ID"] = CommandSetID
+				f.seek(4, 1)
+				MoveTablePointer = int.from_bytes(f.read(4),"little")
+				f.seek(4, 1)
+				WeaponListPointer = int.from_bytes(f.read(4),"little")
+				f.seek(4, 1)
+				NumMoves = int.from_bytes(f.read(2),"little")
+				NumWepSets = int.from_bytes(f.read(2),"little")
+				GoToPointer(f, MoveTablePointer)
+
+				b = 0
+				firstmove = f.tell()
+				while b < NumMoves:
+					nextmove = f.tell() + 8
+					GoToPointer(f)
+					movename = GetStringFromPointer(f)
+					FollowUpMoveIdx.append([b, movename])
+					f.seek(8, 1)
+					AnimPointer = int.from_bytes(f.read(4),"little")
+					f.seek(-4, 1)
+					animbyte1 = int.from_bytes(f.read(1),"little")
+					animbyte2 = int.from_bytes(f.read(1),"little")
+					animbyte3 = int.from_bytes(f.read(1),"little")
+					animbyte4 = int.from_bytes(f.read(1),"little")
+					f.seek(-4, 1)
+					animshort1 = int.from_bytes(f.read(2),"little")
+					animshort2 = int.from_bytes(f.read(2),"little")
+					animbyte5 = int.from_bytes(f.read(1),"little")
+					animbyte6 = int.from_bytes(f.read(1),"little")
+					animbyte7 = int.from_bytes(f.read(1),"little")
+					animbyte8 = int.from_bytes(f.read(1),"little")
+					FollowUpsPointer = int.from_bytes(f.read(4),"little")
+					f.seek(12, 1)
+					NumFollowUps = int.from_bytes(f.read(2),"little")
+					AnimTableBool = int.from_bytes(f.read(1),"little")
+					movetype = int.from_bytes(f.read(1),"little")
+					CommandSetDictionary[(setname)]["Move Table"][movename]["Move Type"] = movetype
+					CommandSetDictionary[(setname)]["Move Table"][movename]["Animation Table Bool"] = AnimTableBool
+					
+			#Anim Tables-----------------------------------------------------------------------------------------
+					if AnimTableBool == 1:
+						currentpos = f.tell()
+						f.seek(AnimPointer)
+						AnimTablePointer = int.from_bytes(f.read(4),"little")
+						f.seek(5, 1)
+						NumAnims = int.from_bytes(f.read(1),"little")
+						f.seek(AnimTablePointer)
+						c = 1
+						while c < NumAnims + 1:
+							currentanimpos = f.tell()
+							GoToPointer(f)
+							AnimName = GetStringFromPointer(f)
+							f.seek(4, 1)
+							unkuint32 = int.from_bytes(f.read(4),"little")
+							unkbyte1 = int.from_bytes(f.read(1),"little")
+							unkbyte2 = int.from_bytes(f.read(1),"little")
+							unkbyte3 = int.from_bytes(f.read(1),"little")
+							unkbyte4 = int.from_bytes(f.read(1),"little")
+							unkbyte5 = int.from_bytes(f.read(1),"little")
+							unkbyte6 = int.from_bytes(f.read(1),"little")
+							unkbyte7 = int.from_bytes(f.read(1),"little")
+							unkbyte8 = int.from_bytes(f.read(1),"little")
+							CommandSetDictionary[(setname)]["Move Table"][movename]["Animation Table"]["Animation " + str(c)]["Animation Used"] = AnimName
+							CommandSetDictionary[(setname)]["Move Table"][movename]["Animation Table"]["Animation " + str(c)]["Unknown uint32"] = unkuint32
+							CommandSetDictionary[(setname)]["Move Table"][movename]["Animation Table"]["Animation " + str(c)]["Unknown byte 1"] = unkbyte1
+							CommandSetDictionary[(setname)]["Move Table"][movename]["Animation Table"]["Animation " + str(c)]["Unknown byte 2"] = unkbyte2
+							CommandSetDictionary[(setname)]["Move Table"][movename]["Animation Table"]["Animation " + str(c)]["Unknown byte 3"] = unkbyte3
+							CommandSetDictionary[(setname)]["Move Table"][movename]["Animation Table"]["Animation " + str(c)]["Unknown byte 4"] = unkbyte4
+							CommandSetDictionary[(setname)]["Move Table"][movename]["Animation Table"]["Animation " + str(c)]["Unknown byte 5"] = unkbyte5
+							CommandSetDictionary[(setname)]["Move Table"][movename]["Animation Table"]["Animation " + str(c)]["Unknown byte 6"] = unkbyte6
+							CommandSetDictionary[(setname)]["Move Table"][movename]["Animation Table"]["Animation " + str(c)]["Unknown byte 7"] = unkbyte7
+							CommandSetDictionary[(setname)]["Move Table"][movename]["Animation Table"]["Animation " + str(c)]["Unknown byte 8"] = unkbyte8
+							f.seek(currentanimpos+8)
+							c = c + 1
+						f.seek(currentpos)
+					elif movetype == 4:
+						CommandSetDictionary[(setname)]["Move Table"][movename]["Animation Related Byte 1"] = animbyte1
+						CommandSetDictionary[(setname)]["Move Table"][movename]["Animation Related Byte 2"] = animbyte2
+						CommandSetDictionary[(setname)]["Move Table"][movename]["Animation Related Byte 3"] = animbyte3
+						CommandSetDictionary[(setname)]["Move Table"][movename]["Animation Related Byte 4"] = animbyte4
+						CommandSetDictionary[(setname)]["Move Table"][movename]["Animation Related Byte 5"] = animbyte5
+						CommandSetDictionary[(setname)]["Move Table"][movename]["Animation Related Byte 6"] = animbyte6
+						CommandSetDictionary[(setname)]["Move Table"][movename]["Animation Related Byte 7"] = animbyte7
+						CommandSetDictionary[(setname)]["Move Table"][movename]["Animation Related Byte 8"] = animbyte8
+					elif movetype == 3:
+						CommandSetDictionary[(setname)]["Move Table"][movename]["Moveset IDx"] = animshort2
+						CommandSetDictionary[(setname)]["Move Table"][movename]["Move IDx to Play in Moveset"] = animshort1
+					elif movetype == 17:
+						useless = "useless"
+					else:
+						AnimName = GetStringFromPointer(f, AnimPointer)
+						CommandSetDictionary[(setname)]["Move Table"][movename]["Animation Used"] = AnimName
+			#Anim Tables-----------------------------------------------------------------------------------------
 
 
-		#Follow Up Tables-----------------------------------------------------------------------------------------
-				f.seek(FollowUpsPointer)
-				c = 1
-				while c < NumFollowUps + 1:
-					nextfollowup = f.tell() + 8
-					GoToPointer(f)
-					numfollowupprops = int.from_bytes(f.read(2),"little")
-					idoffollowup = int.from_bytes(f.read(2),"little")
-					f.seek(4, 1)
-					CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up to"] = idoffollowup
-					GoToPointer(f)
-					d = 1
-					while d < numfollowupprops + 1:
-						nextproperty = f.tell() + 8
+			#Follow Up Tables-----------------------------------------------------------------------------------------
+					f.seek(FollowUpsPointer)
+					c = 1
+					while c < NumFollowUps + 1:
+						nextfollowup = f.tell() + 8
 						GoToPointer(f)
-						propint1 = int.from_bytes(f.read(4),"little")
-						f.seek(-4, 1)
-						propint1ver17 = int.from_bytes(f.read(3),"little")
-						f.seek(-3, 1)
-						propbyte1 = int.from_bytes(f.read(1),"little")
-						propbyte2 = int.from_bytes(f.read(1),"little")
-						f.seek(-2,1)
-						propshort1 = int.from_bytes(f.read(2),"little")
-						propbyte3 = int.from_bytes(f.read(1),"little")
-						propbyte4 = int.from_bytes(f.read(1),"little")
-						f.seek(-2,1)
-						propshort2 = int.from_bytes(f.read(2),"little")
+						numfollowupprops = int.from_bytes(f.read(2),"little")
+						idoffollowup = int.from_bytes(f.read(2),"little")
 						f.seek(4, 1)
-						propint2 = int.from_bytes(f.read(4),"little")
-						f.seek(-4, 1)
-						propbyte5 = int.from_bytes(f.read(1),"little")
-						propbyte6 = int.from_bytes(f.read(1),"little")
-						propbyte7 = int.from_bytes(f.read(1),"little")
-						propbyte8 = int.from_bytes(f.read(1),"little")
+						CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up to"] = idoffollowup
+						GoToPointer(f)
+						d = 1
+						while d < numfollowupprops + 1:
+							nextproperty = f.tell() + 8
+							GoToPointer(f)
+							propint1 = int.from_bytes(f.read(4),"little")
+							f.seek(-4, 1)
+							propint1ver17 = int.from_bytes(f.read(3),"little")
+							f.seek(-3, 1)
+							propbyte1 = int.from_bytes(f.read(1),"little")
+							propbyte2 = int.from_bytes(f.read(1),"little")
+							f.seek(-2,1)
+							propshort1 = int.from_bytes(f.read(2),"little")
+							propbyte3 = int.from_bytes(f.read(1),"little")
+							propbyte4 = int.from_bytes(f.read(1),"little")
+							f.seek(-2,1)
+							propshort2 = int.from_bytes(f.read(2),"little")
+							f.seek(4, 1)
+							propint2 = int.from_bytes(f.read(4),"little")
+							f.seek(-4, 1)
+							propbyte5 = int.from_bytes(f.read(1),"little")
+							propbyte6 = int.from_bytes(f.read(1),"little")
+							propbyte7 = int.from_bytes(f.read(1),"little")
+							propbyte8 = int.from_bytes(f.read(1),"little")
+							if args.simplenames: typedes = ""
+							else: 
+								if propint2 in PropertyTypeDictDE:
+									typedes = "| Type " + str(propint2) + " = " + PropertyTypeDictDE[propint2]
+								else: typedes = ""						
+							
+							if propint2 == 11:
+								if fileversion == 17:
+									CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Property Type"] = propint2
+									CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Heat Action IDx"] = propint1ver17
+									CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Unknown Property Byte"] = propbyte4					
+								if fileversion == 16:
+									CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Property Type"] = propint2
+									CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Hact Name"] = GetStringFromPointer(f, propint1)
+							elif propint2 == 1 or propint2 == 2 or propint2 == 6:
+								ButtonPressBitmask1 = bitfield(propbyte1)
+								ButtonPressBitmask2 = bitfield(propbyte2)
+								ButtonPressBitmask2.extend(ButtonPressBitmask1)
+								ButtonPressBitmask = ButtonPressBitmask2
+								ConditionalsBitmask = bitfield(propbyte4)
+								buttonpress = bitfieldListMask(ButtonPressBitmask, ButtonPressListDE)
+								conditional = bitfieldListMask(ConditionalsBitmask, ButtonPressConditionalsDE)
+								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Property Type"] = propint2
+								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Button Press"] = buttonpress
+								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Conditionals"] = conditional
+							elif propint2 == 3:
+								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Property Type"] = propint2
+								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Unk Byte 1"] = propbyte1
+							elif propint2 == 4:
+								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Property Type"] = propint2
+								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Unk Byte 1"] = propbyte1
+							elif propint2 == 5:
+								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Property Type"] = propint2
+								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["State Type"] = StateModifiersDictK2[propbyte1]
+								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Unk Byte 4"] = propbyte4						
+							elif propint2 == 7:
+								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Property Type"] = propint2
+								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Unk Byte 1"] = propbyte1
+							elif propint2 == 9:
+								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Property Type"] = propint2
+								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Unk Byte 1"] = propbyte4
+							elif propint2 == 12:
+								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Property Type"] = propint2
+								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Enemy Distance"] = propshort1
+								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Unk Byte 4"] = propbyte4
+							elif propint2 == 19:
+								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Property Type"] = propint2
+								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Unk Byte"] = propbyte1
+								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Analog Direction"] = propbyte2
+								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Conditions"] = propbyte4
+							elif propint2 == 22:
+								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Property Type"] = propint2
+								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Quickstep Direction"] = QuickstepDictDE[propbyte1]
+							elif propint2 == 23:
+								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Property Type"] = propint2
+								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Skill ID"] = propint1
+							elif propint2 == 26:
+								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Property Type"] = propint2
+								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Timing"] = propint1
+							else:
+								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d)]["Property Type"] = propint2
+								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d)]["Unk Byte 1"] = propbyte1
+								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d)]["Unk Byte 2"] = propbyte2
+								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d)]["Unk Byte 3"] = propbyte3
+								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d)]["Unk Byte 4"] = propbyte4
+							f.seek(nextproperty)
+							d = d + 1
+						c = c + 1
+						f.seek(nextfollowup)
+					f.seek(nextmove)
+			#Follow Up Tables-----------------------------------------------------------------------------------------
+					b = b + 1
+					
+					
+			#Re-Iterates through the moves to replace IDx of follow up with String		
+				f.seek(firstmove)
+				b = 0	
+				while b < NumMoves:
+					nextmove = f.tell() + 8
+					GoToPointer(f)
+					movename = GetStringFromPointer(f)
+					f.seek(16, 1)
+					FollowUpsPointer = int.from_bytes(f.read(4),"little")
+					f.seek(12, 1)
+					NumFollowUps = int.from_bytes(f.read(2),"little")
+					f.seek(FollowUpsPointer)
+					c = 1
+					while c < NumFollowUps + 1:
+						nextfollowup = f.tell() + 8
+						GoToPointer(f)
+						numfollowupprops = int.from_bytes(f.read(2),"little")
+						idoffollowup = int.from_bytes(f.read(2),"little")
+						followupstring = GetMovefromIDx(idoffollowup, FollowUpMoveIdx)
+						f.seek(4, 1)
+						CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up to"] = followupstring
+						GoToPointer(f)
+						c = c + 1
+						f.seek(nextfollowup)
+					f.seek(nextmove)
+					b = b + 1
+			#End of Re-Iteration
+
+				f.seek(WeaponListPointer)
+				b = 1
+				while b < NumWepSets + 1:
+					nextwepset = f.tell() + 8
+					GoToPointer(f)
+					GoToPointer(f)
+					numwepproperties = int.from_bytes(f.read(2),"little")
+					wepcommandset = int.from_bytes(f.read(2),"little")
+					f.seek(4, 1)
+					WepPropertiesPointer = int.from_bytes(f.read(4),"little")
+					f.seek(WepPropertiesPointer)
+					CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Command Set ID for Weapon Moveset"] = wepcommandset
+					c = 1
+					while c < numwepproperties + 1:
+						nextweppos = f.tell() + 8
+						GoToPointer(f)
+						wepbyte1 = int.from_bytes(f.read(1),"little")
+						wepbyte2 = int.from_bytes(f.read(1),"little")
+						wepbyte3 = int.from_bytes(f.read(1),"little")
+						wepbyte4 = int.from_bytes(f.read(1),"little")
+						f.seek(-4,1)
+						wepshort1 = int.from_bytes(f.read(2),"little")
+						wepshort2 = int.from_bytes(f.read(2),"little")
+						f.seek(-4,1)
+						wepint1 = int.from_bytes(f.read(4),"little")
+						f.seek(4, 1)
+						wepshort3 = int.from_bytes(f.read(2),"little")
+						wepshort4 = int.from_bytes(f.read(2),"little")
+						f.seek(-4,1)
+						wepint2 = int.from_bytes(f.read(4),"little")
+						f.seek(-4,1)
+						wepbyte5 = int.from_bytes(f.read(1),"little")
+						wepbyte6 = int.from_bytes(f.read(1),"little")
+						wepbyte7 = int.from_bytes(f.read(1),"little")
+						wepbyte8 = int.from_bytes(f.read(1),"little")
 						if args.simplenames: typedes = ""
 						else: 
-							if propint2 in PropertyTypeDictDE:
-								typedes = "| Type " + str(propint2) + " = " + PropertyTypeDictDE[propint2]
-							else: typedes = ""						
-						
-						if propint2 == 11:
-							if fileversion == 17:
-								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Property Type"] = propint2
-								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Heat Action IDx"] = propint1ver17
-								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Unknown Property Byte"] = propbyte4					
-							if fileversion == 16:
-								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Property Type"] = propint2
-								CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Hact Name"] = GetStringFromPointer(f, propint1)
-						elif propint2 == 1:
-							ButtonPressBitmask = bitfield(propbyte1)
-							DPadBitmask = bitfield(propbyte2)
-							ConditionalsBitmask = bitfield(propbyte4)
+							if wepshort3 in PropertyTypeDictDE:
+								typedes = "| Type " + str(wepshort3) + " = " + PropertyTypeDictDE[wepshort3]
+							else: typedes = ""	
+						if wepint2 == 10:
+							CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"]["Property " + str(c) + typedes]["Property Type"] = wepint2
+							CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"]["Property " + str(c) + typedes]["Weapon Category ID"] = wepshort1
+							CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"]["Property " + str(c) + typedes]["Bitmask Byte 1"] = wepbyte3
+							CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"]["Property " + str(c) + typedes]["Bitmask Byte 2"] = wepbyte4
+						elif wepint2 == 1 or wepint2 == 2 or wepint2 == 6:
+							ButtonPressBitmask1 = bitfield(wepbyte1)
+							ButtonPressBitmask2 = bitfield(wepbyte2)
+							ButtonPressBitmask2.extend(ButtonPressBitmask1)
+							ButtonPressBitmask = ButtonPressBitmask2
+							ConditionalsBitmask = bitfield(wepbyte4)
 							buttonpress = bitfieldListMask(ButtonPressBitmask, ButtonPressListDE)
-							dpad = bitfieldListMask(DPadBitmask, DirectionalPadListDE)
 							conditional = bitfieldListMask(ConditionalsBitmask, ButtonPressConditionalsDE)
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Property Type"] = propint2
+							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Property Type"] = wepint2
 							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Button Press"] = buttonpress
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Directional Pad"] = dpad
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Conditionals"] = conditional
-						elif propint2 == 2:
-							ButtonPressBitmask = bitfield(propbyte1)
-							DPadBitmask = bitfield(propbyte2)
-							ConditionalsBitmask = bitfield(propbyte4)
-							buttonpress = bitfieldListMask(ButtonPressBitmask, ButtonPressListDE)
-							dpad = bitfieldListMask(DPadBitmask, DirectionalPadListDE)
-							conditional = bitfieldListMask(ConditionalsBitmask, ButtonPressConditionalsDE)
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Property Type"] = propint2
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Button Press"] = buttonpress
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Directional Pad"] = dpad
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Conditionals"] = conditional
-						elif propint2 == 3:
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Property Type"] = propint2
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Unk Byte 1"] = propbyte1
-						elif propint2 == 4:
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Property Type"] = propint2
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Unk Byte 1"] = propbyte1
-						elif propint2 == 5:
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Property Type"] = propint2
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["State Type"] = StateModifiersDictK2[propbyte1]
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Unk Byte 4"] = propbyte4						
-						elif propint2 == 6:
-							ButtonPressBitmask = bitfield(propbyte1)
-							DPadBitmask = bitfield(propbyte2)
-							ConditionalsBitmask = bitfield(propbyte4)
-							buttonpress = bitfieldListMask(ButtonPressBitmask, ButtonPressListDE)
-							dpad = bitfieldListMask(DPadBitmask, DirectionalPadListDE)
-							conditional = bitfieldListMask(ConditionalsBitmask, ButtonPressConditionalsDE)
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Property Type"] = propint2
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Button Press"] = buttonpress
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Directional Pad"] = dpad
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Conditionals"] = conditional
-						elif propint2 == 7:
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Property Type"] = propint2
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Unk Byte 1"] = propbyte1
-						elif propint2 == 9:
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Property Type"] = propint2
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Unk Byte 1"] = propbyte4
-						elif propint2 == 12:
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Property Type"] = propint2
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Enemy Distance"] = propshort1
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Unk Byte 4"] = propbyte4
-						elif propint2 == 19:
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Property Type"] = propint2
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Unk Byte"] = propbyte1
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Analog Direction"] = propbyte2
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Conditions"] = propbyte4
-						elif propint2 == 22:
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Property Type"] = propint2
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Quickstep Direction"] = QuickstepDictDE[propbyte1]
-						elif propint2 == 23:
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Property Type"] = propint2
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Skill ID"] = propint1
-						elif propint2 == 26:
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Property Type"] = propint2
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Timing"] = propint1
+							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d) + typedes]["Conditionals"] = conditional									
+						elif wepint2 == 3:
+							CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"]["Property " + str(c) + typedes]["Property Type"] = wepint2
+							CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"]["Property " + str(c) + typedes]["Unk Byte 1"] = wepbyte1
+						elif wepint2 == 4:
+							CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"]["Property " + str(c) + typedes]["Property Type"] = wepint2
+							CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"]["Property " + str(c) + typedes]["Unk Byte 1"] = wepbyte1					
+						elif wepint2 == 5:
+							CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"]["Property " + str(c) + typedes]["Property Type"] = wepint2
+							CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"]["Property " + str(c) + typedes]["State Type"] = StateModifiersDictK2[wepbyte1]
+							CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"]["Property " + str(c) + typedes]["Unk Byte 4"] = wepbyte4
+						elif wepint2 == 7:
+							CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"]["Property " + str(c) + typedes]["Property Type"] = wepint2
+							CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"]["Property " + str(c) + typedes]["Unk Byte 1"] = wepbyte1
+						elif wepint2 == 9:
+							CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"]["Property " + str(c) + typedes]["Property Type"] = wepint2
+							CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"]["Property " + str(c) + typedes]["Unk Byte 1"] = wepbyte4
+						elif wepint2 == 12:
+							CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"]["Property " + str(c) + typedes]["Property Type"] = wepint2
+							CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"]["Property " + str(c) + typedes]["Enemy Distance"] = wepshort1
+							CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"]["Property " + str(c) + typedes]["Unk Byte 4"] = wepbyte4
+						elif wepint2 == 19:
+							CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"]["Property " + str(c) + typedes]["Property Type"] = wepint2
+							CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"]["Property " + str(c) + typedes]["Unk Byte"] = wepbyte1
+							CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"]["Property " + str(c) + typedes]["Analog Direction"] = wepbyte2
+							CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"]["Property " + str(c) + typedes]["Conditions"] = wepbyte4
+						elif wepint2 == 22:
+							CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"]["Property " + str(c) + typedes]["Property Type"] = wepint2
+							CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"]["Property " + str(c) + typedes]["Quickstep Direction"] = QuickstepDictDE[wepbyte1]
+						elif wepint2 == 23:
+							CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"]["Property " + str(c) + typedes]["Property Type"] = wepint2
+							CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"]["Property " + str(c) + typedes]["Skill ID"] = wepint1
+						elif wepint2 == 26:
+							CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"]["Property " + str(c) + typedes]["Property Type"] = wepint2
+							CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"]["Property " + str(c) + typedes]["Timing"] = wepint1
 						else:
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d)]["Property Type"] = propint2
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d)]["Unk Byte 1"] = propbyte1
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d)]["Unk Byte 2"] = propbyte2
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d)]["Unk Byte 3"] = propbyte3
-							CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"]["Property "+ str(d)]["Unk Byte 4"] = propbyte4
-						f.seek(nextproperty)
-						d = d + 1
-					c = c + 1
-					f.seek(nextfollowup)
-				f.seek(nextmove)
-		#Follow Up Tables-----------------------------------------------------------------------------------------
-				b = b + 1
+							CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"]["Property " + str(c)]["Property Type"] = wepint2
+							CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"]["Property " + str(c)]["Short Property 1"] = wepshort1
+							CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"]["Property " + str(c)]["Short Property 2"] = wepshort2					
+						c = c + 1
+						f.seek(nextweppos)
+					f.seek(nextwepset)
+					b = b + 1
+				f.seek(nextset)
 				
+				with open(mypath + "\\" + str(setname) + ".json", 'w') as outfile:
+					json.dump(CommandSetDictionary, outfile, indent=2, ensure_ascii=False)
+				CommandSetDictionary.clear()
+				a = a + 1
 				
-		#Re-Iterates through the moves to replace IDx of follow up with String		
-			f.seek(firstmove)
-			b = 0	
-			while b < NumMoves:
-				nextmove = f.tell() + 8
-				GoToPointer(f)
-				movename = GetStringFromPointer(f)
-				f.seek(16, 1)
-				FollowUpsPointer = int.from_bytes(f.read(4),"little")
-				f.seek(12, 1)
-				NumFollowUps = int.from_bytes(f.read(2),"little")
-				f.seek(FollowUpsPointer)
-				c = 1
-				while c < NumFollowUps + 1:
-					nextfollowup = f.tell() + 8
-					GoToPointer(f)
-					numfollowupprops = int.from_bytes(f.read(2),"little")
-					idoffollowup = int.from_bytes(f.read(2),"little")
-					followupstring = GetMovefromIDx(idoffollowup, FollowUpMoveIdx)
-					f.seek(4, 1)
-					CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up to"] = followupstring
-					GoToPointer(f)
-					c = c + 1
-					f.seek(nextfollowup)
-				f.seek(nextmove)
-				b = b + 1
-		#End of Re-Iteration
-
-			f.seek(WeaponListPointer)
-			b = 1
-			while b < NumWepSets + 1:
-				nextwepset = f.tell() + 8
-				GoToPointer(f)
-				GoToPointer(f)
-				numwepproperties = int.from_bytes(f.read(2),"little")
-				wepcommandset = int.from_bytes(f.read(2),"little")
-				f.seek(4, 1)
-				WepPropertiesPointer = int.from_bytes(f.read(4),"little")
-				f.seek(WepPropertiesPointer)
-				CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Command Set ID for Weapon Moveset"] = wepcommandset
-				c = 1
-				while c < numwepproperties + 1:
-					nextweppos = f.tell() + 8
-					GoToPointer(f)
-					wepshort1 = int.from_bytes(f.read(2),"little")
-					wepshort2 = int.from_bytes(f.read(2),"little")
-					f.seek(4, 1)
-					wepshort3 = int.from_bytes(f.read(2),"little")
-					wepshort4 = int.from_bytes(f.read(2),"little")
-					CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"]["Property " + str(c)]["Weapon Category ID"] = wepshort1
-					CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"]["Property " + str(c)]["Short Property 2"] = wepshort2
-					CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"]["Property " + str(c)]["Short Property 3"] = wepshort3
-					CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"]["Property " + str(c)]["Short Property 4"] = wepshort4
-					c = c + 1
-					f.seek(nextweppos)
-				f.seek(nextwepset)
-				b = b + 1
-			f.seek(nextset)
-			
-			with open(mypath + "\\" + str(setname) + ".json", 'w') as outfile:
-				json.dump(CommandSetDictionary, outfile, indent=2, ensure_ascii=False)
-			CommandSetDictionary.clear()
-			a = a + 1
-			
-			CommandSetOrderIDxDictionary[CommandSetOrderIDx] = setname
-			CommandSetOrderIDx = CommandSetOrderIDx + 1
-			
-		with open("Command Set List (Reference Only).json", 'w') as outfile:
-			json.dump(CommandSetIDDictionary, outfile, indent=1, ensure_ascii=False)
-			
-		with open("Command Set Order List.json", 'w') as outfile:
-			json.dump(CommandSetOrderIDxDictionary, outfile, indent=1, ensure_ascii=False)
-		f.close
+				CommandSetOrderIDxDictionary[CommandSetOrderIDx] = setname
+				CommandSetOrderIDx = CommandSetOrderIDx + 1
+				
+			with open("Command Set List (Reference Only).json", 'w') as outfile:
+				json.dump(CommandSetIDDictionary, outfile, indent=1, ensure_ascii=False)
+				
+			with open("Command Set Order List.json", 'w') as outfile:
+				json.dump(CommandSetOrderIDxDictionary, outfile, indent=1, ensure_ascii=False)
+			f.close
 #End of File extract
 
 #File Rebuild
@@ -1022,14 +1163,11 @@ else:
 									elif propertytype == 1 or propertytype == 2 or propertytype == 6:
 										buttonpressStrings = jsonfile[commandsetname]["Move Table"][movename]["Follow Up Table"][followuptable]["Follows Up Properties"][followupprop]["Button Press"]
 										bitslist = iterateStringstoBits(ButtonPressListDE, buttonpressStrings)
-										byte1 = bitlistToInteger(bitslist)
-										dpadStrings = jsonfile[commandsetname]["Move Table"][movename]["Follow Up Table"][followuptable]["Follows Up Properties"][followupprop]["Directional Pad"]
-										bitslist = iterateStringstoBits(DirectionalPadListDE, dpadStrings)
-										byte2 = bitlistToInteger(bitslist)
+										short1 = bitlistToInteger(bitslist)
 										conditionalsStrings = jsonfile[commandsetname]["Move Table"][movename]["Follow Up Table"][followuptable]["Follows Up Properties"][followupprop]["Conditionals"]
 										bitslist = iterateStringstoBits(ButtonPressConditionalsDE, conditionalsStrings)
 										byte4 = bitlistToInteger(bitslist)
-										temparray2.append([propertytype,byte1,byte2,0,byte4])
+										temparray2.append([propertytype,short1,0,byte4])
 									elif propertytype == 3:
 										byte1 = jsonfile[commandsetname]["Move Table"][movename]["Follow Up Table"][followuptable]["Follows Up Properties"][followupprop]["Unk Byte 1"]
 										temparray2.append([propertytype,byte1,0,0,0])
@@ -1101,8 +1239,8 @@ else:
 							animvalue = b'\x00'
 						AnimationValues.append([animvalue,"Useless"])
 					elif movetype == 3:
-						animshort1 = byte1 = jsonfile[commandsetname]["Move Table"][movename]["Moveset IDx"]
-						animshort2 = byte1 = jsonfile[commandsetname]["Move Table"][movename]["Unknown Short"]
+						animshort2 = jsonfile[commandsetname]["Move Table"][movename]["Moveset IDx"]
+						animshort1 = jsonfile[commandsetname]["Move Table"][movename]["Move IDx to Play in Moveset"]
 						AnimationValues.append([animshort1, animshort2,"Useless"])
 					elif movetype == 17:
 						animvalue = -1
@@ -1140,7 +1278,7 @@ else:
 									newfile.write(b'\x00\x00\x00\x00')
 									newfile.write(int_to_bytes(FollowUpPropValues[x][y][0], 4))
 									newfile.write(b'\x00\x00\x00\x00')
-							elif FollowUpPropValues[x][y][0] == 12:
+							elif FollowUpPropValues[x][y][0] == 12 or FollowUpPropValues[x][y][0] == 1 or FollowUpPropValues[x][y][0] == 2 or FollowUpPropValues[x][y][0] == 6:
 								#propertytype,short1,0,byte4
 								newfile.write(int_to_bytes(FollowUpPropValues[x][y][1], 2))
 								newfile.write(int_to_bytes(FollowUpPropValues[x][y][2], 1))
@@ -1258,24 +1396,105 @@ else:
 						numwepprops = len(jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"])
 						WeaponCommand = jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Command Set ID for Weapon Moveset"]
 						for weaponprops in list(jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"].keys()):
-							propshort1 = jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"][weaponprops]["Weapon Category ID"]
-							propshort2 = jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"][weaponprops]["Short Property 2"]
-							propshort3 = jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"][weaponprops]["Short Property 3"]
-							propshort4 = jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"][weaponprops]["Short Property 4"]
 							temparray3 = []
-							temparray3.append([propshort1,propshort2,propshort3,propshort4])
-							WeaponPropertyArray.append(temparray3)
+							wepint2 = jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"][weaponprops]["Property Type"]
+							if wepint2 == 10:
+								wepshort1 = jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"][weaponprops]["Weapon Category ID"]
+								wepbyte3 = jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"][weaponprops]["Bitmask Byte 1"]
+								wepbyte4 = jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"][weaponprops]["Bitmask Byte 2"]
+								temparray3.append([wepint2, wepshort1,wepbyte3, wepbyte4])
+								WeaponPropertyArray.append(temparray3)									
+							elif wepint2 == 1 or wepint2 == 2 or wepint2 == 6:
+								buttonpressStrings = jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"][weaponprops]["Button Press"]
+								bitslist = iterateStringstoBits(ButtonPressListDE, buttonpressStrings)
+								short1 = bitlistToInteger(bitslist)
+								conditionalsStrings = jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"][weaponprops]["Conditionals"]
+								bitslist = iterateStringstoBits(ButtonPressConditionalsDE, conditionalsStrings)
+								byte4 = bitlistToInteger(bitslist)								
+								temparray3.append([wepint2, short1, 0, byte4])
+								WeaponPropertyArray.append(temparray3)									
+							elif wepint2 == 3:
+								wepbyte1 = jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"][weaponprops]["Unk Byte 1"]
+								temparray3.append([wepint2,wepbyte1, 0, 0, 0])
+								WeaponPropertyArray.append(temparray3)									
+							elif wepint2 == 4:
+								jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"][weaponprops]["Unk Byte 1"] = wepbyte1					
+								temparray3.append([wepint2,wepbyte1, 0, 0, 0])
+								WeaponPropertyArray.append(temparray3)									
+							elif wepint2 == 5:
+								wepbyte1 = jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"][weaponprops]["State Type"]
+								wepbyte4 = jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"][weaponprops]["Unk Byte 4"]
+								tempdict = dict([(value, key) for key, value in StateModifiersDictK2.items()]) 
+								wepbyte1 = tempdict[wepbyte1]								
+								temparray3.append([wepint2,wepbyte1, 0, 0, wepbyte4])
+								WeaponPropertyArray.append(temparray3)					
+							elif wepint2 == 7:
+								wepbyte1 = jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"][weaponprops]["Unk Byte 1"]
+								temparray3.append([wepint2,wepbyte1, 0, 0, 0])
+								WeaponPropertyArray.append(temparray3)									
+							elif wepint2 == 9:
+								wepbyte4 = jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"][weaponprops]["Unk Byte 1"]
+								temparray3.append([wepint2, 0, 0, 0, wepbyte4])
+								WeaponPropertyArray.append(temparray3)									
+							elif wepint2 == 12:
+								wepshort1 = jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"][weaponprops]["Enemy Distance"]
+								wepbyte4 = jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"][weaponprops]["Unk Byte 4"]
+								temparray3.append([wepint2, wepshort1, 0, wepbyte4])
+								WeaponPropertyArray.append(temparray3)									
+							elif wepint2 == 19:
+								wepbyte1 = jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"][weaponprops]["Unk Byte"]
+								wepbyte2 = jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"][weaponprops]["Analog Direction"]
+								wepbyte4 = jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"][weaponprops]["Conditions"]
+								temparray3.append([wepint2,wepbyte1, wepbyte2, 0, wepbyte4])
+								WeaponPropertyArray.append(temparray3)
+							elif wepint2 == 22:
+								wepbyte1 = jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"][weaponprops]["Quickstep Direction"]
+								tempdict = dict([(value, key) for key, value in QuickstepDictDE.items()]) 
+								wepbyte1 = tempdict[wepbyte1]	
+								temparray3.append([wepint2,wepint1])
+								WeaponPropertyArray.append(temparray3)									
+							elif wepint2 == 23:
+								wepint1 = jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"][weaponprops]["Skill ID"]
+								temparray3.append([wepint2,wepint1])
+								WeaponPropertyArray.append(temparray3)									
+							elif wepint2 == 26:
+								wepint1 = jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"][weaponprops]["Timing"]
+								temparray3.append([wepint2,wepint1])
+								WeaponPropertyArray.append(temparray3)								
+							else:
+								wepbyte1 = jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"][weaponprops]["Unk Byte 1"]
+								wepbyte2 = jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"][weaponprops]["Unk Byte 2"]
+								wepbyte3 = jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"][weaponprops]["Unk Byte 3"]
+								wepbyte4 = jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"][weaponprops]["Unk Byte 4"]
+								temparray3.append([wepint2,wepbyte1,wepbyte2,wepbyte3,wepbyte4])
+								WeaponPropertyArray.append(temparray3)
 						x = 0
 						while x < numwepprops:
 							y = 0
 							while y < len(WeaponPropertyArray[x]):
 								WeaponPropertyPointers.append(newfile.tell())
-								newfile.write(int_to_bytes(WeaponPropertyArray[x][y][0], 2))
-								newfile.write(int_to_bytes(WeaponPropertyArray[x][y][1], 2))
-								newfile.write(b'\x00\x00\x00\x00')
-								newfile.write(int_to_bytes(WeaponPropertyArray[x][y][2], 2))
-								newfile.write(int_to_bytes(WeaponPropertyArray[x][y][3], 2))
-								newfile.write(b'\x00\x00\x00\x00')
+								if WeaponPropertyArray[x][y][0] == 1 or WeaponPropertyArray[x][y][0] == 2 or WeaponPropertyArray[x][y][0] == 6 or WeaponPropertyArray[x][y][0] == 10 or WeaponPropertyArray[x][y][0] == 12:
+									#wepint2, wepshort1,wepbyte3, wepbyte4
+									newfile.write(int_to_bytes(WeaponPropertyArray[x][y][1], 2))
+									newfile.write(int_to_bytes(WeaponPropertyArray[x][y][2], 1))
+									newfile.write(int_to_bytes(WeaponPropertyArray[x][y][3], 1))
+									newfile.write(b'\x00\x00\x00\x00')
+									newfile.write(int_to_bytes(WeaponPropertyArray[x][y][0], 4))
+									newfile.write(b'\x00\x00\x00\x00')
+								elif WeaponPropertyArray[x][y][0] == 22 or WeaponPropertyArray[x][y][0] == 23 or WeaponPropertyArray[x][y][0] == 26:
+									#wepint2, wepint1
+									newfile.write(int_to_bytes(WeaponPropertyArray[x][y][1], 4))
+									newfile.write(b'\x00\x00\x00\x00')
+									newfile.write(int_to_bytes(WeaponPropertyArray[x][y][0], 4))
+									newfile.write(b'\x00\x00\x00\x00')									
+								else:
+									newfile.write(int_to_bytes(WeaponPropertyArray[x][y][1], 1))
+									newfile.write(int_to_bytes(WeaponPropertyArray[x][y][2], 1))
+									newfile.write(int_to_bytes(WeaponPropertyArray[x][y][3], 1))
+									newfile.write(int_to_bytes(WeaponPropertyArray[x][y][4], 1))
+									newfile.write(b'\x00\x00\x00\x00')
+									newfile.write(int_to_bytes(WeaponPropertyArray[x][y][0], 4))
+									newfile.write(b'\x00\x00\x00\x00')
 								y = y + 1
 							x = x + 1
 						WeaponMovesetPropListPointer = newfile.tell()
@@ -1477,14 +1696,11 @@ else:
 										elif propertytype == 0 or propertytype == 1 or propertytype == 5:
 											buttonpressStrings = jsonfile[commandsetname]["Move Table"][movename]["Follow Up Table"][followuptable]["Follows Up Properties"][followupprop]["Button Press"]
 											bitslist = iterateStringstoBits(ButtonPressListOE, buttonpressStrings)
-											byte1 = bitlistToInteger(bitslist)
-											dpadStrings = jsonfile[commandsetname]["Move Table"][movename]["Follow Up Table"][followuptable]["Follows Up Properties"][followupprop]["Directional Pad"]
-											bitslist = iterateStringstoBits(DirectionalPadListOE, dpadStrings)
-											byte2 = bitlistToInteger(bitslist)
+											short1 = bitlistToInteger(bitslist)
 											conditionalsStrings = jsonfile[commandsetname]["Move Table"][movename]["Follow Up Table"][followuptable]["Follows Up Properties"][followupprop]["Conditionals"]
 											bitslist = iterateStringstoBits(ButtonPressConditionalsOE, conditionalsStrings)
 											byte4 = bitlistToInteger(bitslist)
-											temparray2.append([propertytype,byte1,byte2,0,byte4])
+											temparray2.append([propertytype,short1,0,byte4])
 										elif propertytype == 2:
 											byte1 = jsonfile[commandsetname]["Move Table"][movename]["Follow Up Table"][followuptable]["Follows Up Properties"][followupprop]["Unk Byte 1"]
 											temparray2.append([propertytype,byte1,0,0,0])
@@ -1519,7 +1735,10 @@ else:
 											temparray2.append([propertytype,byte1,0,0,0])
 										elif propertytype == 25:
 											propint1 = jsonfile[commandsetname]["Move Table"][movename]["Follow Up Table"][followuptable]["Follows Up Properties"][followupprop]["Timing"]
-											temparray2.append([propertytype,propint1])											
+											temparray2.append([propertytype,propint1])
+										elif propertytype == 33:
+											byte1 = jsonfile[commandsetname]["Move Table"][movename]["Follow Up Table"][followuptable]["Follows Up Properties"][followupprop]["Heat Gear"] - 1
+											temparray2.append([propertytype,byte1,0,0,0])
 										else:
 											byte1 = jsonfile[commandsetname]["Move Table"][movename]["Follow Up Table"][followuptable]["Follows Up Properties"][followupprop]["Unk Byte 1"]
 											byte2 = jsonfile[commandsetname]["Move Table"][movename]["Follow Up Table"][followuptable]["Follows Up Properties"][followupprop]["Unk Byte 2"]
@@ -1549,7 +1768,7 @@ else:
 							AnimationValues.append([animvalue,"Useless"])
 						elif movetype == 2:
 							short1 = jsonfile[commandsetname]["Move Table"][movename]["Moveset IDx"]
-							short2 = jsonfile[commandsetname]["Move Table"][movename]["Unknown Short"]
+							short2 = jsonfile[commandsetname]["Move Table"][movename]["Move IDx to Play in Moveset"]
 							AnimationValues.append([short1, short2,"Useless"])
 						elif movetype == 3:
 							byte1 = jsonfile[commandsetname]["Move Table"][movename]["Moveset IDx for Sync"]
@@ -1580,7 +1799,7 @@ else:
 									PropertyPointer = stringpointerdict[FollowUpPropValues[x][y][1]]
 									newfile.write(int_to_bytes(FollowUpPropValues[x][y][0], 4, "big"))
 									newfile.write(int_to_bytes(PropertyPointer, 4, "big"))
-								elif FollowUpPropValues[x][y][0] == 11:
+								elif FollowUpPropValues[x][y][0] == 11 or FollowUpPropValues[x][y][0] == 0 or FollowUpPropValues[x][y][0] == 1 or FollowUpPropValues[x][y][0] == 5:
 									#propertytype,short1,0,byte4
 									newfile.write(int_to_bytes(FollowUpPropValues[x][y][0], 4, "big"))
 									newfile.write(int_to_bytes(FollowUpPropValues[x][y][3], 1, "big"))
@@ -1688,28 +1907,105 @@ else:
 				if "Weapon Moveset Table" in jsonfile[commandsetname]:
 					for weaponset in list(jsonfile[commandsetname]["Weapon Moveset Table"].keys()):
 						WeaponPropertyArray = []
-						WeaponPropertyPointers = []
+						WeaponPropertyPointers = []						
 						numwepprops = len(jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"])
 						WeaponCommand = jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Command Set Name for Weapon Moveset"]
 						if WeaponCommand == "Null":
 							WeaponCommand = b'\x00'
 						for weaponprops in list(jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"].keys()):
-							propshort1 = jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"][weaponprops]["Weapon Category ID"]
-							propshort2 = jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"][weaponprops]["Short Property 2"]
-							propshort3 = jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"][weaponprops]["Short Property 3"]
-							propshort4 = jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"][weaponprops]["Short Property 4"]
 							temparray3 = []
-							temparray3.append([propshort1,propshort2,propshort3,propshort4])
-							WeaponPropertyArray.append(temparray3)
+							wepint2 = jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"][weaponprops]["Property Type"]							
+							if wepint2 == 9:
+								wepshort1 = jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"][weaponprops]["Weapon Category ID"]
+								wepbyte3 = jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"][weaponprops]["Bitmask Byte 1"]
+								wepbyte4 = jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"][weaponprops]["Bitmask Byte 2"]
+								temparray3.append([wepint2, wepshort1,wepbyte3, wepbyte4])
+								WeaponPropertyArray.append(temparray3)									
+							elif wepint2 == 0 or wepint2 == 1 or wepint2 == 5:
+								buttonpressStrings = jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"][weaponprops]["Button Press"]
+								bitslist = iterateStringstoBits(ButtonPressListDE, buttonpressStrings)
+								short1 = bitlistToInteger(bitslist)
+								conditionalsStrings = jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"][weaponprops]["Conditionals"]
+								bitslist = iterateStringstoBits(ButtonPressConditionalsDE, conditionalsStrings)
+								byte4 = bitlistToInteger(bitslist)								
+								temparray3.append([wepint2, short1, 0, byte4])
+								WeaponPropertyArray.append(temparray3)									
+							elif wepint2 == 2:
+								wepbyte1 = jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"][weaponprops]["Unk Byte 1"]
+								temparray3.append([wepint2,wepbyte1, 0, 0, 0])
+								WeaponPropertyArray.append(temparray3)									
+							elif wepint2 == 3:
+								jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"][weaponprops]["Unk Byte 1"] = wepbyte1					
+								temparray3.append([wepint2,wepbyte1, 0, 0, 0])
+								WeaponPropertyArray.append(temparray3)									
+							elif wepint2 == 4:
+								wepbyte1 = jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"][weaponprops]["State Type"]
+								wepbyte4 = jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"][weaponprops]["Unk Byte 4"]
+								tempdict = dict([(value, key) for key, value in StateModifiersDictK2.items()]) 
+								wepbyte1 = tempdict[wepbyte1]								
+								temparray3.append([wepint2,wepbyte1, 0, 0, wepbyte4])
+								WeaponPropertyArray.append(temparray3)					
+							elif wepint2 == 6:
+								wepbyte1 = jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"][weaponprops]["Unk Byte 1"]
+								temparray3.append([wepint2,wepbyte1, 0, 0, 0])
+								WeaponPropertyArray.append(temparray3)									
+							elif wepint2 == 8:
+								wepbyte4 = jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"][weaponprops]["Unk Byte 1"]
+								temparray3.append([wepint2, 0, 0, 0, wepbyte4])
+								WeaponPropertyArray.append(temparray3)									
+							elif wepint2 == 11:
+								wepshort1 = jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"][weaponprops]["Enemy Distance"]
+								wepbyte4 = jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"][weaponprops]["Unk Byte 4"]
+								temparray3.append([wepint2, wepshort1, 0, wepbyte4])
+								WeaponPropertyArray.append(temparray3)									
+							elif wepint2 == 18:
+								wepbyte1 = jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"][weaponprops]["Unk Byte"]
+								wepbyte2 = jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"][weaponprops]["Analog Direction"]
+								wepbyte4 = jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"][weaponprops]["Conditions"]
+								temparray3.append([wepint2,wepbyte1, wepbyte2, 0, wepbyte4])
+								WeaponPropertyArray.append(temparray3)
+							elif wepint2 == 21:
+								wepbyte1 = jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"][weaponprops]["Quickstep Direction"]
+								tempdict = dict([(value, key) for key, value in QuickstepDictDE.items()]) 
+								wepbyte1 = tempdict[wepbyte1]	
+								temparray3.append([wepint2,wepint1])
+								WeaponPropertyArray.append(temparray3)									
+							elif wepint2 == 22:
+								wepint1 = jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"][weaponprops]["Skill ID"]
+								temparray3.append([wepint2,wepint1])
+								WeaponPropertyArray.append(temparray3)									
+							elif wepint2 == 25:
+								wepint1 = jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"][weaponprops]["Timing"]
+								temparray3.append([wepint2,wepint1])
+								WeaponPropertyArray.append(temparray3)								
+							else:
+								wepbyte1 = jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"][weaponprops]["Unk Byte 1"]
+								wepbyte2 = jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"][weaponprops]["Unk Byte 2"]
+								wepbyte3 = jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"][weaponprops]["Unk Byte 3"]
+								wepbyte4 = jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"][weaponprops]["Unk Byte 4"]
+								temparray3.append([wepint2,wepbyte1,wepbyte2, wepbyte3, wepbyte4])
+								WeaponPropertyArray.append(temparray3)
 						x = 0
 						while x < numwepprops:
 							y = 0
 							while y < len(WeaponPropertyArray[x]):
 								WeaponPropertyPointers.append(newfile.tell())
-								newfile.write(int_to_bytes(WeaponPropertyArray[x][y][3], 2, "big"))
-								newfile.write(int_to_bytes(WeaponPropertyArray[x][y][2], 2, "big"))
-								newfile.write(int_to_bytes(WeaponPropertyArray[x][y][1], 2, "big"))
-								newfile.write(int_to_bytes(WeaponPropertyArray[x][y][0], 2, "big"))
+								if WeaponPropertyArray[x][y][0] == 0 or WeaponPropertyArray[x][y][0] == 1 or WeaponPropertyArray[x][y][0] == 5 or WeaponPropertyArray[x][y][0] == 9 or WeaponPropertyArray[x][y][0] == 11:
+									#wepint2, wepshort1,wepbyte3, wepbyte4
+									newfile.write(int_to_bytes(WeaponPropertyArray[x][y][0], 4, "big"))
+									newfile.write(int_to_bytes(WeaponPropertyArray[x][y][3], 1, "big"))
+									newfile.write(int_to_bytes(WeaponPropertyArray[x][y][2], 1, "big"))
+									newfile.write(int_to_bytes(WeaponPropertyArray[x][y][1], 2, "big"))									
+								elif WeaponPropertyArray[x][y][0] == 21 or WeaponPropertyArray[x][y][0] == 22 or WeaponPropertyArray[x][y][0] == 25:
+									#wepint2, wepint1
+									newfile.write(int_to_bytes(WeaponPropertyArray[x][y][0], 4, "big"))
+									newfile.write(int_to_bytes(WeaponPropertyArray[x][y][1], 4, "big"))							
+								else:
+									newfile.write(int_to_bytes(WeaponPropertyArray[x][y][0], 4, "big"))
+									newfile.write(int_to_bytes(WeaponPropertyArray[x][y][4], 1, "big"))
+									newfile.write(int_to_bytes(WeaponPropertyArray[x][y][3], 1, "big"))
+									newfile.write(int_to_bytes(WeaponPropertyArray[x][y][2], 1, "big"))
+									newfile.write(int_to_bytes(WeaponPropertyArray[x][y][1], 1, "big"))									
 								y = y + 1
 							x = x + 1
 						WeaponMovesetPropListPointer = newfile.tell()
