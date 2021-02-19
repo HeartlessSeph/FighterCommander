@@ -721,6 +721,9 @@ if filecheck == True:
 					animbyte6 = int.from_bytes(f.read(1),"little")
 					animbyte7 = int.from_bytes(f.read(1),"little")
 					animbyte8 = int.from_bytes(f.read(1),"little")
+					f.seek(-4,1)
+					animshort3 = int.from_bytes(f.read(2),"little")
+					animshort4 = int.from_bytes(f.read(2),"little")
 					FollowUpsPointer = int.from_bytes(f.read(4),"little")
 					f.seek(12, 1)
 					NumFollowUps = int.from_bytes(f.read(2),"little")
@@ -777,6 +780,7 @@ if filecheck == True:
 					elif movetype == 3:
 						CommandSetDictionary[(setname)]["Move Table"][movename]["Moveset IDx"] = animshort2
 						CommandSetDictionary[(setname)]["Move Table"][movename]["Move IDx to Play in Moveset"] = animshort1
+						CommandSetDictionary[(setname)]["Move Table"][movename]["Command Set ID"] = animshort3
 					elif movetype == 17:
 						useless = "useless"
 					else:
@@ -1241,7 +1245,8 @@ else:
 					elif movetype == 3:
 						animshort2 = jsonfile[commandsetname]["Move Table"][movename]["Moveset IDx"]
 						animshort1 = jsonfile[commandsetname]["Move Table"][movename]["Move IDx to Play in Moveset"]
-						AnimationValues.append([animshort1, animshort2,"Useless"])
+						animshort3 = jsonfile[commandsetname]["Move Table"][movename]["Command Set ID"]
+						AnimationValues.append([animshort1, animshort2,animshort3])
 					elif movetype == 17:
 						animvalue = -1
 						AnimationValues.append([animvalue,"Useless"])
@@ -1357,7 +1362,8 @@ else:
 					elif movetype == 3:
 						newfile.write(int_to_bytes(AnimationValues[0][0], 2))
 						newfile.write(int_to_bytes(AnimationValues[0][1], 2))
-						newfile.write(b'\x00\x00\x00\x00')
+						newfile.write(int_to_bytes(AnimationValues[0][2], 2))
+						newfile.write(b'\x00\x00')
 					elif movetype == 17:
 						newfile.write(b'\x00\x00\x00\x00\x00\x00\x00\x00')
 					elif movetype == 4:
