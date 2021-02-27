@@ -1218,11 +1218,12 @@ else:
 			tempkey = list(jsonfile.keys())[1]
 			if "Old Engine Game" in jsonfile:
 				enginegame = jsonfile["Old Engine Game"]
-			elif "Hact ID" in jsonfile[tempkey]:
+			else:
+				enginegame = 0
+			if "Hact ID" in jsonfile[tempkey]:
 				filetype = "CHP"
 			else:
 				filetype = "CFC"
-				enginegame = 0
 	
 	if filetype == "CHP":
 		newfile = open("hact new.chp", 'w+b')
