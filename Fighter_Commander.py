@@ -199,7 +199,7 @@ jsonfile = OrderedDict() #Stores the dumped json from file.
 FollowUpMoveIdx = [] #Stores Id's of Moves for follow ups
 ButtonPressListDE = ["Unknown7","Unknown6","Unknown5","D-Pad Right","D-Pad Left","D-Pad Down","D-Pad Up","R2","R1", "L2", "L1", "Cross", "Circle", "Triangle", "Square", "Unknown8"]
 ButtonPressListOE = ["Unknown8","Unknown7","Unknown6","Unknown5","D-Pad Right","D-Pad Left","D-Pad Down","D-Pad Up","L2","R2", "R1", "L1", "Cross", "Circle", "Triangle", "Square"]
-StateModifiersDict = {0: "Unk0", 1: "In Heat Mode", 2: "Unk2", 3: "Run Startup to Full Run", 4: "Enemy Down, Including getting up Animation", 5: "Enemy Standing", 6: "Unk6", 7: "Enemy Down from the Front", 8: "Enemy Down from Behind", 9: "Unk9", 10: "Unk10", 11: "Unk11", 12: "Unk12", 13: "Unk13", 14: "Unk14", 15: "Unk15", 16: "Unk16", 17: "Unk17", 18: "Unk18", 19: "Near Wall", 20: "Unk21", 22: "Unk22", 23: "Unk24", 25: "Unk25", 26: "Unk26", 27: "Unk27", 28: "Unk28", 29: "Unk29", 30: "Attack Punch", 31: "Full Run", 32: "Unk32", 33: "Unk33", 34: "Unk34", 35: "Unk35", 36: "Unk36", 37: "Unk37", 38: "Full Health", 39: "Extreme Heat", 40: "Unk40", 41: "Unk41", 42: "Unk42", 43: "Unk43", 44: "Unk44", 45: "Unk45", 46: "Unk46"}
+StateModifiersDict = {0: "Unk0", 1: "In Heat Mode", 2: "Unk2", 3: "Run Startup to Full Run", 4: "Enemy Down, Including getting up Animation", 5: "Enemy Standing", 6: "Unk6", 7: "Enemy Down from the Front", 8: "Enemy Down from Behind", 9: "Unk9", 10: "Unk10", 11: "Unk11", 12: "Unk12", 13: "Unk13", 14: "Unk14", 15: "Unk15", 16: "Unk16", 17: "Unk17", 18: "Unk18", 19: "Near Wall", 20: "Unk21", 22: "Unk22", 23: "Unk24", 25: "Unk25", 26: "Unk26", 27: "Unk27", 28: "Unk28", 29: "Lock-On", 30: "Attack Punch", 31: "Full Run", 32: "Unk32", 33: "Unk33", 34: "Unk34", 35: "Unk35", 36: "Unk36", 37: "Unk37", 38: "Full Health", 39: "Extreme Heat", 40: "Yakuza 6 Charge State", 41: "Unk41", 42: "Unk42", 43: "Unk43", 44: "Unk44", 45: "Unk45", 46: "Unk46"}
 QuickstepDict = {0: "Front Quickstep", 1: "Left Quickstep", 2: "Back Quickstep", 3: "Right Quickstep"}
 PropertyTypeDictDE = {1: "Button Press", 2: "Button Hold", 3: "Follow Up Start Lock", 4: "Follow Up Lifetime Lock", 5: "State Modifier", 6: "Button Press (Buffered Input)", 7: "Follow Up On Hit", 9: "Analog Deadzone",10: "Weapon Category", 11: "Heat Action", 12: "Enemy Distance", 15: "Target Entity", 19: "Analog Direction", 22: "Quickstep", 23: "Upgrade Unlock", 26: "Timing", 34: "Heat Gear", 41: "Unknown Hact Property" ,48: "Hact Follow Up?"}
 PropertyTypeDictOE = downgradeDictToOE(PropertyTypeDictDE)
@@ -245,6 +245,10 @@ if (len(sys.argv) <= 1):
 			json.dump(QuickstepDict, outfile, indent=2, ensure_ascii=False)
 		with open(mypath + "\\" + "PropertyTypeDictDE" + ".json", 'w') as outfile:
 			json.dump(PropertyTypeDictDE, outfile, indent=2, ensure_ascii=False)
+		with open(mypath + "\\" + "TargetEntityDict" + ".json", 'w') as outfile:
+			json.dump(TargetEntityDict, outfile, indent=2, ensure_ascii=False)
+		with open(mypath + "\\" + "TargetConditional" + ".json", 'w') as outfile:
+			json.dump(TargetConditional, outfile, indent=2, ensure_ascii=False)
 	sys.exit()
 	
 
@@ -305,14 +309,21 @@ def propertyExtraction(f, extract, d, CurrentPropDict, PropertyDictionary, Engin
 				CurrentPropDict["Property "+ str(d) + typedes]["Button Press (2)"] = PropertyDictionary["propbyte2"]
 				CurrentPropDict["Property "+ str(d) + typedes]["Conditionals"] = PropertyDictionary["propbyte4"]
 		else:
-			buttonpressStrings = jsonfile["Button Press"]
-			bitslist = iterateStringstoBits(ButtonPressList, buttonpressStrings)
-			short1 = bitlistToInteger(bitslist)
 			if intswitch == False:
+				buttonpressStrings = jsonfile["Button Press"]
+				bitslist = iterateStringstoBits(ButtonPressList, buttonpressStrings)
+				short1 = bitlistToInteger(bitslist)
+
 				conditionalsStrings = jsonfile["Conditionals"]
 				bitslist = iterateStringstoBits(Conditionals, conditionalsStrings)
 				byte4 = bitlistToInteger(bitslist)
-			else: byte4 = jsonfile["Conditionals"]
+			else:
+				byte1 = jsonfile["Button Press (1)"]
+				byte2 = jsonfile["Button Press (2)"]
+				byte1 = int_to_bytes(byte1)
+				byte2 = int_to_bytes(byte2)
+				short1 = int.from_bytes(byte1+byte2, "little")
+				byte4 = jsonfile["Conditionals"]
 			extracttype = "Short & 2 Bytes"
 			temparray.extend((extracttype,propertytype,short1,0,byte4))
 			
@@ -346,14 +357,16 @@ def propertyExtraction(f, extract, d, CurrentPropDict, PropertyDictionary, Engin
 				CurrentPropDict["Property "+ str(d) + typedes]["State Type"] = PropertyDictionary["propbyte1"]
 				CurrentPropDict["Property "+ str(d) + typedes]["Conditionals"] = PropertyDictionary["propbyte4"]
 		else:
-			byte1 = jsonfile["State Type"]
 			if intswitch == False: 
+				byte1 = jsonfile["State Type"]
+				tempdict = dict([(value, key) for key, value in StateModifiersDict.items()])
+				byte1 = tempdict[byte1]
 				conditionalsStrings = jsonfile["Conditionals"]
 				bitslist = iterateStringstoBits(Conditionals, conditionalsStrings)
 				byte4 = bitlistToInteger(bitslist)
-			else: byte4 = jsonfile["Conditionals"]
-			tempdict = dict([(value, key) for key, value in StateModifiersDict.items()]) 
-			byte1 = tempdict[byte1]
+			else: 
+				byte1 = jsonfile["State Type"]
+				byte4 = jsonfile["Conditionals"]
 			extracttype = "4 Bytes"
 			temparray.extend((extracttype,propertytype,byte1,0,0,byte4))
 			
@@ -1995,6 +2008,20 @@ else:
 											if propertytype == 22:
 												propertypointer = jsonfile[commandsetname]["Move Table"][movename]["Follow Up Table"][followuptable]["Follows Up Properties"][followupprop]["Skill Name"]
 												stringlist.append(propertypointer)
+					if "Weapon Moveset Table" in jsonfile[commandsetname]:
+						for weaponset in list(jsonfile[commandsetname]["Weapon Moveset Table"].keys()):
+							WeaponCommand = jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Command Set Name for Weapon Moveset"]
+							if WeaponCommand == b'\x00':
+								WeaponCommand = "Null"
+							stringlist.append(WeaponCommand)
+							for weaponprops in list(jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"].keys()):
+								propertytype = jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"][weaponprops]["Property Type"]
+								if propertytype == 10:
+									heataction = jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"][weaponprops]["Hact Name"]
+									stringlist.append(heataction)
+								if propertytype == 22:
+									propertypointer = jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"][weaponprops]["Skill Name"]
+									stringlist.append(propertypointer)
 			stringlist = list( dict.fromkeys(stringlist) )
 			x = 0
 			
