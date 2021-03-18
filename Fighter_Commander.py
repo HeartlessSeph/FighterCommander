@@ -193,13 +193,13 @@ VersionDictionary = OrderedDict() #Stores a list of Version Numbers and their As
 VersionDictionary[7] = "Old Engine"
 VersionDictionary[16] = "Dragon Engine"
 VersionDictionary[17] = "Dragon Engine"
-VersionDictionaryHact = {5: "Dragon Engine"}
-OEGameDictionary = {"Yakuza 0 / Kiwami 1": 0, "Yakuza 5": 1}
+VersionDictionaryHact = {5: "Dragon Engine", 6: "Dragon Engine"}
+OEGameDictionary = {"Yakuza 0 / Kiwami 1": 0, "Yakuza 5": 1, "Yakuza Ishin": 2,}
 jsonfile = OrderedDict() #Stores the dumped json from file.
 FollowUpMoveIdx = [] #Stores Id's of Moves for follow ups
 ButtonPressListDE = ["Unknown7","Unknown6","Unknown5","D-Pad Right","D-Pad Left","D-Pad Down","D-Pad Up","R2","R1", "L2", "L1", "Cross", "Circle", "Triangle", "Square", "Unknown8"]
 ButtonPressListOE = ["Unknown8","Unknown7","Unknown6","Unknown5","D-Pad Right","D-Pad Left","D-Pad Down","D-Pad Up","L2","R2", "R1", "L1", "Cross", "Circle", "Triangle", "Square"]
-StateModifiersDict = {0: "Unk0", 1: "In Heat Mode", 2: "Unk2", 3: "Run Startup to Full Run", 4: "Enemy Down, Including getting up Animation", 5: "Enemy Standing", 6: "Unk6", 7: "Enemy Down from the Front", 8: "Enemy Down from Behind", 9: "Unk9", 10: "Unk10", 11: "Unk11", 12: "Unk12", 13: "Unk13", 14: "Unk14", 15: "Unk15", 16: "Unk16", 17: "Unk17", 18: "Unk18", 19: "Near Wall", 20: "Unk21", 22: "Unk22", 23: "Unk24", 25: "Unk25", 26: "Unk26", 27: "Unk27", 28: "Unk28", 29: "Lock-On", 30: "Attack Punch", 31: "Full Run", 32: "Unk32", 33: "Unk33", 34: "Unk34", 35: "Unk35", 36: "Unk36", 37: "Unk37", 38: "Full Health", 39: "Extreme Heat", 40: "Yakuza 6 Charge State", 41: "Unk41", 42: "Unk42", 43: "Unk43", 44: "Unk44", 45: "Unk45", 46: "Unk46"}
+StateModifiersDict = {0: "Unk0", 1: "In Heat Mode", 2: "Unk2", 3: "Run Startup to Full Run", 4: "Enemy Down, Including getting up Animation", 5: "Enemy Standing", 6: "Unk6", 7: "Enemy Down from the Front", 8: "Enemy Down from Behind", 9: "Unk9", 10: "Unk10", 11: "Unk11", 12: "Unk12", 13: "Unk13", 14: "Unk14", 15: "Unk15", 16: "Unk16", 17: "Unk17", 18: "Unk18", 19: "Near Wall", 20: "Unk21", 22: "Unk22", 23: "Unk24", 25: "Unk25", 26: "Unk26", 27: "Unk27", 28: "Unk28", 29: "Lock-On", 30: "Attack Punch", 31: "Full Run", 32: "Unk32", 33: "Unk33", 34: "Unk34", 35: "Unk35", 36: "Unk36", 37: "Unk37", 38: "Full Health", 39: "Extreme Heat", 40: "Yakuza 6 Charge State", 41: "Unk41", 42: "Unk42", 43: "Unk43", 44: "Unk44", 45: "Unk45", 46: "Unk46", 47: "Unk47", 48: "Unk48", 49: "Unk49", 50: "Unk50", 51: "Unk51"}
 QuickstepDict = {0: "Front Quickstep", 1: "Left Quickstep", 2: "Back Quickstep", 3: "Right Quickstep"}
 PropertyTypeDictDE = {1: "Button Press", 2: "Button Hold", 3: "Follow Up Start Lock", 4: "Follow Up Lifetime Lock", 5: "State Modifier", 6: "Button Press (Buffered Input)", 7: "Follow Up On Hit", 9: "Analog Deadzone",10: "Weapon Category", 11: "Heat Action", 12: "Enemy Distance", 15: "Target Entity", 19: "Analog Direction", 22: "Quickstep", 23: "Upgrade Unlock", 26: "Timing", 34: "Heat Gear", 41: "Unknown Hact Property" ,48: "Hact Follow Up?"}
 PropertyTypeDictOE = downgradeDictToOE(PropertyTypeDictDE)
@@ -252,7 +252,7 @@ if (len(sys.argv) <= 1):
 	sys.exit()
 	
 
-def propertyExtraction(f, extract, d, CurrentPropDict, PropertyDictionary, EngineVersion, fileversion, typedes, intswitch, jsonfile, ButtonPressList = ButtonPressListDE, Conditionals = Conditionals, StateModifiersDict = StateModifiersDict, QuickstepDict = QuickstepDict, TargetEntityDict = TargetEntityDict, TargetConditional = TargetConditional):
+def propertyExtraction(f, extract, d, CurrentPropDict, PropertyDictionary, EngineVersion, fileversion, typedes, intswitch, jsonfile, ButtonPressList = ButtonPressListDE, hactnamedict = [], Conditionals = Conditionals, StateModifiersDict = StateModifiersDict, QuickstepDict = QuickstepDict, TargetEntityDict = TargetEntityDict, TargetConditional = TargetConditional):
 	if EngineVersion == "Dragon Engine":
 		OEMod = 0
 	elif EngineVersion == "Old Engine":
@@ -537,9 +537,14 @@ def propertyExtraction(f, extract, d, CurrentPropDict, PropertyDictionary, Engin
 			
 	elif PropType == 48:
 		if extract == True:
-			temp = GetStringFromPointer(f, PropertyDictionary["propint1"])
-			CurrentPropDict["Property "+ str(d) + typedes]["Property Type"] = PropertyDictionary["propint2"]
-			CurrentPropDict["Property "+ str(d) + typedes]["Hact (Property)"] = temp
+			if fileversion == 6:
+				temp = list(hactnamedict[str(PropertyDictionary["propint1"])].keys())[0]
+				CurrentPropDict["Property "+ str(d) + typedes]["Property Type"] = PropertyDictionary["propint2"]
+				CurrentPropDict["Property "+ str(d) + typedes]["Hact (Property)"] = temp
+			else:
+				temp = GetStringFromPointer(f, PropertyDictionary["propint1"])
+				CurrentPropDict["Property "+ str(d) + typedes]["Property Type"] = PropertyDictionary["propint2"]
+				CurrentPropDict["Property "+ str(d) + typedes]["Hact (Property)"] = temp
 		else:
 			hactpointer = jsonfile["Hact (Property)"]
 			extracttype = "Pointer"
@@ -724,7 +729,13 @@ if filecheck == True:
 			
 			
 		if VersionDictionaryHact[fileversion] == "Dragon Engine":
-			
+			if fileversion == 6:
+				print("An extracted talk_param is needed to extract this file.")
+				talkparam = input("Please enter the name of the talk param file: ")
+				talkparam = open(talkparam, 'rb')
+				talkparamfile = json.load(talkparam)
+			else:
+				talkparamfile = []
 			filesize = int.from_bytes(f.read(4),"little")
 			f.seek(filesize)
 			f.seek(-8, 1)
@@ -736,28 +747,47 @@ if filecheck == True:
 			a = 0
 			while a < NumHactSets:
 				CommandSetDictionary["File Version"] = fileversion
-				setname = GetCommandSetName(f)
-				FollowUpMoveIdx = []
-				nextset = f.tell() + 8
-				GoToPointer(f)
-				f.seek(8, 1)
+				if fileversion == 5:
+					setname = GetCommandSetName(f)
+					FollowUpMoveIdx = []
+					nextset = f.tell() + 8
+					GoToPointer(f)
+					f.seek(8, 1)
+				elif fileversion == 6:
+					FollowUpMoveIdx = []
+					nextset = f.tell() + 8
+					GoToPointer(f)
+					setID = int.from_bytes(f.read(4),"little")
+					setname = list(talkparamfile[str(setID)].keys())[0]
+					subnumber = int.from_bytes(f.read(4),"little")
+					if subnumber > 0:
+						setname = setname + "#" + str(subnumber)
 				HactTargetPointer = int.from_bytes(f.read(4),"little")
 				f.seek(4,1)
 				HactType = int.from_bytes(f.read(4),"little")
 				CommandSetID = int.from_bytes(f.read(4),"little")
 				CommandSetIDDictionary[(setname)]= CommandSetID#
-				CommandSetDictionary[(setname)]["Hact ID"] = CommandSetID
+				if fileversion == 5: CommandSetDictionary[(setname)]["Hact ID"] = CommandSetID
+				elif fileversion == 6: CommandSetDictionary[(setname)]["Hact ID"] = setID
 				CommandSetDictionary[(setname)]["Hact Type"] = HactType
-				UnkListing = GetStringFromPointer(f)
-				f.seek(8, 1)
-				NumTargets = int.from_bytes(f.read(4),"little")
+				if fileversion == 5:
+					UnkListing = GetStringFromPointer(f)
+					f.seek(8, 1)
+					NumTargets = int.from_bytes(f.read(4),"little")
+				elif fileversion == 6: 
+					UnkListing = int.from_bytes(f.read(4),"little")
+					NumTargets = int.from_bytes(f.read(4),"little")
+					f.seek(4, 1)
 				UnkInt1 = int.from_bytes(f.read(4),"little")
 				UnkInt2 = int.from_bytes(f.read(4),"little")
 				UnkInt3 = int.from_bytes(f.read(4),"little")
 				UnkInt4 = int.from_bytes(f.read(4),"little")
 				UnkInt5 = int.from_bytes(f.read(4),"little")
-				HactBase = GetStringFromPointer(f)
-				f.seek(4,1)
+				if fileversion == 5:
+					HactBase = GetStringFromPointer(f)
+					f.seek(4,1)
+				elif fileversion == 6:
+					HactBase = int.from_bytes(f.read(4),"little")
 				CommandSetDictionary[(setname)]["Base Hact"] = HactBase
 				CommandSetDictionary[(setname)]["Unknown String"] = UnkListing
 				CommandSetDictionary[(setname)]["Unknown Int 1"] = UnkInt1
@@ -816,7 +846,7 @@ if filecheck == True:
 							else: typedes = ""
 						if args.integers: intswitch = True
 						else: intswitch = False					
-						propertyExtraction(f, True, d, CommandSetDictionary[(setname)]["Target Table"]["Target " + str(c)]["Target Properties"], PropertyDictionary, VersionDictionaryHact[fileversion], fileversion, typedes,intswitch, OrderedDict())
+						propertyExtraction(f, True, d, CommandSetDictionary[(setname)]["Target Table"]["Target " + str(c)]["Target Properties"], PropertyDictionary, VersionDictionaryHact[fileversion], fileversion, typedes,intswitch, OrderedDict(), ButtonPressListDE, talkparamfile)
 						f.seek(nextproperty)
 						d = d + 1
 					c = c + 1
@@ -881,9 +911,10 @@ if filecheck == True:
 			print("Please choose which Old Engine Game you are extracting from:")
 			print("0 = Yakuza 0/Kiwami 1")
 			print("1 = Yakuza 5")
+			print("2 = Yakuza Ishin")
 			OEGameText = input("Enter a Number: ")
 			OEGame = int(OEGameText)
-			if OEGame > 1:
+			if OEGame > 2:
 				print("An incorrect option was entered. Please restart the program and try again.")
 				input("Press ENTER to exit... ")
 				sys.exit()
@@ -901,6 +932,8 @@ if filecheck == True:
 					CommandSetDictionary["Old Engine Game"] = "Yakuza 0 / Kiwami 1"
 				elif OEGame == 1:
 					CommandSetDictionary["Old Engine Game"] = "Yakuza 5"
+				elif OEGame == 2:
+					CommandSetDictionary["Old Engine Game"] = "Yakuza Ishin"
 				setname = GetCommandSetName(f, "big")
 				FollowUpMoveIdx = []
 				nextset = f.tell() + 4
@@ -924,7 +957,7 @@ if filecheck == True:
 					f.seek(4, 1)
 					FollowUpMoveIdx.append([b, movename])
 					NumFollowUps = int.from_bytes(f.read(1),"big")
-					if OEGame == 0:
+					if OEGame == 0 or OEGame == 2:
 						NumAdditionalProps = int.from_bytes(f.read(1),"big")
 						AnimTableBool = int.from_bytes(f.read(1),"big")
 					elif OEGame == 1:
@@ -936,7 +969,7 @@ if filecheck == True:
 					animshort1 = int.from_bytes(f.read(2),"big")
 					animshort2 = int.from_bytes(f.read(2),"big")
 					FollowUpsPointer = int.from_bytes(f.read(4),"big")
-					if OEGame == 0:
+					if OEGame == 0 or OEGame == 2:
 						AdditionalPropsPointer = int.from_bytes(f.read(4),"big")
 					elif OEGame == 1:
 						AdditionalPropsPointer = AnimPointer
@@ -951,7 +984,7 @@ if filecheck == True:
 						f.seek(AnimPointer)
 						if OEGame == 0:
 							NumAnims = int.from_bytes(f.read(2),"big")
-						elif OEGame == 1:
+						elif OEGame == 1 or OEGame == 2:
 							unkval = NumAnims = int.from_bytes(f.read(1),"big")
 							NumAnims = int.from_bytes(f.read(1),"big")
 						f.seek(2, 1)
@@ -1960,9 +1993,10 @@ else:
 				print("Unable to find Engine Game. Please choose which Old Engine Game you are repacking:")
 				print("0 = Yakuza 0/Kiwami 1")
 				print("1 = Yakuza 5")
+				print("2 = Yakuza Ishin")
 				OEGameText = input("Enter a Number: ")
 				OEGame = int(OEGameText)
-				if OEGame > 1:
+				if OEGame > 2:
 					print("An incorrect option was entered. Please restart the program and try again.")
 					input("Press ENTER to exit... ")
 					sys.exit()
@@ -2125,7 +2159,7 @@ else:
 								numadditionalprops = len(jsonfile[commandsetname]["Move Table"][movename]["Additional Properties Table"])
 								for moveproperty in list(jsonfile[commandsetname]["Move Table"][movename]["Additional Properties Table"].keys()):
 									unkshort1 = jsonfile[commandsetname]["Move Table"][movename]["Additional Properties Table"][moveproperty]["Unk Short 1"]
-									unkshort2 = jsonfile[commandsetname]["Move Table"][movename]["Additional Properties Table"][moveproperty]["Unk Short 1"]
+									unkshort2 = jsonfile[commandsetname]["Move Table"][movename]["Additional Properties Table"][moveproperty]["Unk Short 2"]
 									AdditionalMoveProps.append([unkshort1, unkshort2])
 							else:
 								numadditionalprops = 0
@@ -2178,7 +2212,7 @@ else:
 								AnimTableTableTablePointer = newfile.tell()
 								if OEGame == 0:
 									newfile.write(int_to_bytes(len(AnimationTableValues), 2, "big"))
-								elif OEGame == 1:
+								elif OEGame == 1 or OEGame == 2:
 									newfile.write(int_to_bytes(1, 1, "big"))
 									newfile.write(int_to_bytes(len(AnimationTableValues), 1, "big"))
 								newfile.write(b'\x00\x00')
@@ -2198,7 +2232,7 @@ else:
 							curmovepointer = newfile.tell()
 							newfile.write(int_to_bytes(stringpointerdict[movename], 4, "big"))
 							newfile.write(int_to_bytes(numfollowups, 1, "big"))
-							if OEGame == 0:
+							if OEGame == 0 or OEGame == 2:
 								newfile.write(int_to_bytes(numadditionalprops, 1, "big"))
 								newfile.write(int_to_bytes(animtablebool, 1, "big"))
 							if OEGame == 1:
@@ -2218,7 +2252,7 @@ else:
 							else:
 								newfile.write(int_to_bytes(stringpointerdict[AnimationValues[0][0]], 4, "big"))
 							newfile.write(int_to_bytes(FollowUpTablePointer, 4, "big"))
-							if OEGame == 0:
+							if OEGame == 0 or OEGame == 2:
 								newfile.write(int_to_bytes(AdditionalMovePropsPointer, 4, "big"))
 					x = 0
 					movetablepointer = newfile.tell()
