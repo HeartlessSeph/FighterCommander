@@ -195,6 +195,7 @@ VersionDictionary[16] = "Dragon Engine"
 VersionDictionary[17] = "Dragon Engine"
 VersionDictionaryHact = {5: "Dragon Engine", 6: "Dragon Engine"}
 OEGameDictionary = {"Yakuza 0 / Kiwami 1": 0, "Yakuza 5": 1, "Yakuza Ishin": 2,}
+DEGameDictionary = {"Yakuza 6": 0, "Yakuza Kiwami 2 / Judgement": 1}
 jsonfile = OrderedDict() #Stores the dumped json from file.
 FollowUpMoveIdx = [] #Stores Id's of Moves for follow ups
 ButtonPressListDE = ["Unknown7","Unknown6","Unknown5","D-Pad Right","D-Pad Left","D-Pad Down","D-Pad Up","R2","R1", "L2", "L1", "Cross", "Circle", "Triangle", "Square", "Unknown8"]
@@ -1185,6 +1186,15 @@ if filecheck == True:
 		
 		#Start of Dragon Engine Extraction
 		if VersionDictionary[fileversion] == "Dragon Engine":
+			print("Please choose which Dragon Engine Game you are extracting from:")
+			print("0 = Yakuza 6")
+			print("1 = Yakuza Kiwami 2/ Judgement")
+			DEGameText = input("Enter a Number: ")
+			DEGame = int(DEGameText)
+			if DEGame > 1:
+				print("An incorrect option was entered. Please restart the program and try again.")
+				input("Press ENTER to exit... ")
+				sys.exit()
 			filesize = int.from_bytes(f.read(4),"little")
 			f.seek(filesize)
 			f.seek(-8, 1)
@@ -1196,14 +1206,18 @@ if filecheck == True:
 			a = 0
 			while a < NumCommandSets:
 				CommandSetDictionary["File Version"] = fileversion
+				tempdict = dict([(value, key) for key, value in DEGameDictionary.items()])
+				CommandSetDictionary["Dragon Engine Game"] = tempdict[DEGame]
 				setname = GetCommandSetName(f)
 				FollowUpMoveIdx = []
 				nextset = f.tell() + 8
 				GoToPointer(f)
 				f.seek(8, 1)
-				CommandSetID = int.from_bytes(f.read(4),"little")
-				CommandSetIDDictionary[(setname)]= CommandSetID#
-				CommandSetDictionary[(setname)]["Command Set ID"] = CommandSetID
+				if DEGame == 1:
+					CommandSetID = int.from_bytes(f.read(4),"little")
+					CommandSetIDDictionary[(setname)]= CommandSetID#
+					CommandSetDictionary[(setname)]["Command Set ID"] = CommandSetID
+				else: f.seek(4, 1)
 				f.seek(4, 1)
 				MoveTablePointer = int.from_bytes(f.read(4),"little")
 				f.seek(4, 1)
@@ -1394,13 +1408,19 @@ if filecheck == True:
 				while b < NumWepSets + 1:
 					nextwepset = f.tell() + 8
 					GoToPointer(f)
+					if DEGame == 0:
+						f.seek(8, 1)
+						wepcommandset = GetStringFromPointer(f)
+						f.seek(-8, 1)
 					GoToPointer(f)
 					numwepproperties = int.from_bytes(f.read(2),"little")
-					wepcommandset = int.from_bytes(f.read(2),"little")
+					if DEGame == 1: wepcommandset = int.from_bytes(f.read(2),"little")
+					else: f.seek(2, 1)
 					f.seek(4, 1)
 					WepPropertiesPointer = int.from_bytes(f.read(4),"little")
 					f.seek(WepPropertiesPointer)
-					CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Command Set ID for Weapon Moveset"] = wepcommandset
+					if DEGame == 1: CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Command Set ID for Weapon Moveset"] = wepcommandset
+					elif DEGame == 0: CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Command Set Name for Weapon Moveset"] = wepcommandset
 					c = 1
 					while c < numwepproperties + 1:
 						nextweppos = f.tell() + 8
@@ -1447,9 +1467,9 @@ if filecheck == True:
 				
 				CommandSetOrderIDxDictionary[CommandSetOrderIDx] = setname
 				CommandSetOrderIDx = CommandSetOrderIDx + 1
-				
-			with open("Command Set List (Reference Only).json", 'w') as outfile:
-				json.dump(CommandSetIDDictionary, outfile, indent=1, ensure_ascii=False)
+			if DEGame == 1:
+				with open("Command Set List (Reference Only).json", 'w') as outfile:
+					json.dump(CommandSetIDDictionary, outfile, indent=1, ensure_ascii=False)
 				
 			with open("Command Set Order List.json", 'w') as outfile:
 				json.dump(CommandSetOrderIDxDictionary, outfile, indent=1, ensure_ascii=False)
@@ -1464,6 +1484,7 @@ else:
 	workdir = sys.argv[1]
 	for f in os.listdir(kfile):#Gets file version
 		curfile = workdir + "\\" + f
+		print(curfile)
 		with open(curfile, 'r', encoding='utf8') as file:
 			jsonfile = json.load(file)
 			fileversion = jsonfile["File Version"]
@@ -1471,6 +1492,9 @@ else:
 			if "Old Engine Game" in jsonfile:
 				filetype = "CFC"
 				enginegame = jsonfile["Old Engine Game"]
+			elif "Dragon Engine Game" in jsonfile:
+				filetype = "CFC"
+				enginegame = jsonfile["Dragon Engine Game"]
 			elif "Hact ID" in jsonfile[tempkey]:
 				filetype = "CHP"
 			else:
@@ -1661,17 +1685,19 @@ else:
 	if filetype == "CFC":
 		newfile = open("fighter_command new.cfc", 'w+b')
 		if VersionDictionary[fileversion] == "Dragon Engine":
+			DEGame = DEGameDictionary[enginegame]
 			newfile.write(b'\x43\x46\x43\x49\x21\x00\x00\x00')#Writes header
 			newfile.write(int_to_bytes(fileversion, 4))
 			newfile.write(b'\x00\x00\x00\x00')#Writes filesize filler
 			for f in os.listdir(kfile):#Loops through all Json files and collects string data
+				print(curfile)
 				curfile = workdir + "\\" + f
 				with open(curfile, 'r', encoding='utf8') as file:
 					jsonfile = json.load(file)
 					fileversion = jsonfile["File Version"]
-					commandsetname = list(jsonfile.keys())[1]
+					commandsetname = list(jsonfile.keys())[2]
 					stringlist.append(commandsetname)
-					commandsetID = jsonfile[commandsetname]["Command Set ID"]
+					#commandsetID = jsonfile[commandsetname]["Command Set ID"]
 					for move in list(jsonfile[commandsetname]["Move Table"].keys()):
 						movename = move
 						stringlist.append(movename)
@@ -1694,6 +1720,13 @@ else:
 										if propertytype == 11 and fileversion == 16:
 											heataction = jsonfile[commandsetname]["Move Table"][movename]["Follow Up Table"][followuptable]["Follows Up Properties"][followupprop]["Hact Name"]
 											stringlist.append(heataction)
+					if DEGame == 0:
+						if "Weapon Moveset Table" in jsonfile[commandsetname]:
+							for weaponset in list(jsonfile[commandsetname]["Weapon Moveset Table"].keys()):
+								WeaponCommand = jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Command Set Name for Weapon Moveset"]
+								if WeaponCommand == "Null":
+									WeaponCommand = b'\x00'
+								stringlist.append(WeaponCommand)
 			stringlist = list( dict.fromkeys(stringlist) )
 			x = 0
 			
@@ -1720,11 +1753,12 @@ else:
 				curfile = workdir + "\\" + CommandSetOrderDictionary[str(CommandSetOrderIDx)] + ".json"
 				with open(curfile, 'r', encoding='utf8') as file:
 					jsonfile = json.load(file)
+					print(curfile)
 					MovePointers = []
 					FollowUpIdx = OrderedDict()
 					fileversion = jsonfile["File Version"]
-					commandsetname = list(jsonfile.keys())[1]
-					commandsetID = jsonfile[commandsetname]["Command Set ID"]
+					commandsetname = list(jsonfile.keys())[2]
+					if DEGame == 1: commandsetID = jsonfile[commandsetname]["Command Set ID"]
 
 					#Shitty copy paste to get Move Idx's for later use
 					x = 0
@@ -1908,7 +1942,11 @@ else:
 							WeaponPropertyArray = []
 							WeaponPropertyPointers = []
 							numwepprops = len(jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"])
-							WeaponCommand = jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Command Set ID for Weapon Moveset"]
+							if DEGame == 0: 
+								WeaponCommand = jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Command Set Name for Weapon Moveset"]
+								if WeaponCommand == "Null":
+									WeaponCommand = b'\x00'
+							elif DEGame == 1: WeaponCommand = jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Command Set ID for Weapon Moveset"]
 							for weaponprops in list(jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"].keys()):
 								temparray3 = []
 								temparray3.append(propertyExtraction(f, False, 0, [], [], VersionDictionary[fileversion], fileversion, "", args.integers, jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"][weaponprops], ButtonPressListDE))
@@ -1929,14 +1967,16 @@ else:
 								x = x + 1
 							WeaponCommandSetPointer = newfile.tell()
 							newfile.write(int_to_bytes(len(WeaponPropertyPointers), 2))
-							newfile.write(int_to_bytes(WeaponCommand, 2))
+							if DEGame == 1: newfile.write(int_to_bytes(WeaponCommand, 2))
+							else: newfile.write(b'\x00\x00')
 							newfile.write(b'\x00\x00\x00\x00')
 							newfile.write(int_to_bytes(WeaponMovesetPropListPointer, 4))
 							newfile.write(b'\x00\x00\x00\x00')
 							WeaponSetPointers.append(newfile.tell())
 							newfile.write(int_to_bytes(WeaponCommandSetPointer, 4))
 							newfile.write(b'\x00\x00\x00\x00')
-							newfile.write(int_to_bytes(WeaponCommand, 4))
+							if DEGame == 1: newfile.write(int_to_bytes(WeaponCommand, 4))
+							elif DEGame == 0: newfile.write(int_to_bytes(stringpointerdict[WeaponCommand], 4))
 							newfile.write(b'\x00\x00\x00\x00')
 						x = 0
 						WeaponMovesetListPointer = newfile.tell()
@@ -1949,7 +1989,8 @@ else:
 					currcommandsetpointer = newfile.tell()
 					newfile.write(int_to_bytes(stringpointerdict[commandsetname], 4))
 					newfile.write(b'\x00\x00\x00\x00')
-					newfile.write(int_to_bytes(commandsetID, 4))
+					if DEGame == 1: newfile.write(int_to_bytes(commandsetID, 4))
+					else: newfile.write(b'\x00\x00\x00\x00')
 					newfile.write(b'\x00\x00\x00\x00')
 					newfile.write(int_to_bytes(movetablepointer, 4))
 					newfile.write(b'\x00\x00\x00\x00')
