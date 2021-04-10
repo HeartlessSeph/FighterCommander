@@ -195,7 +195,7 @@ VersionDictionary[16] = "Dragon Engine"
 VersionDictionary[17] = "Dragon Engine"
 VersionDictionaryHact = {5: "Dragon Engine", 6: "Dragon Engine"}
 OEGameDictionary = {"Yakuza 0 / Kiwami 1": 0, "Yakuza 5": 1, "Yakuza Ishin": 2,}
-DEGameDictionary = {"Yakuza 6": 0, "Yakuza Kiwami 2 / Judgement": 1}
+DEGameDictionary = {"Yakuza 6": 0, "Yakuza Kiwami 2 / Judgement": 1, "Yakuza 6 Blue Jacket Demo": 2,}
 jsonfile = OrderedDict() #Stores the dumped json from file.
 FollowUpMoveIdx = [] #Stores Id's of Moves for follow ups
 ButtonPressListDE = ["Unknown7","Unknown6","Unknown5","D-Pad Right","D-Pad Left","D-Pad Down","D-Pad Up","R2","R1", "L2", "L1", "Cross", "Circle", "Triangle", "Square", "Unknown8"]
@@ -1189,12 +1189,15 @@ if filecheck == True:
 			print("Please choose which Dragon Engine Game you are extracting from:")
 			print("0 = Yakuza 6")
 			print("1 = Yakuza Kiwami 2/ Judgement")
+			print("2 = Yakuza 6 Blue Jacket Demo")
 			DEGameText = input("Enter a Number: ")
 			DEGame = int(DEGameText)
-			if DEGame > 1:
+			if DEGame > 2:
 				print("An incorrect option was entered. Please restart the program and try again.")
 				input("Press ENTER to exit... ")
 				sys.exit()
+			if DEGame == 2: JacketMod = 1
+			else: JacketMod = 0
 			filesize = int.from_bytes(f.read(4),"little")
 			f.seek(filesize)
 			f.seek(-8, 1)
@@ -1209,6 +1212,7 @@ if filecheck == True:
 				tempdict = dict([(value, key) for key, value in DEGameDictionary.items()])
 				CommandSetDictionary["Dragon Engine Game"] = tempdict[DEGame]
 				setname = GetCommandSetName(f)
+				#print(setname)
 				FollowUpMoveIdx = []
 				nextset = f.tell() + 8
 				GoToPointer(f)
@@ -1233,6 +1237,7 @@ if filecheck == True:
 					nextmove = f.tell() + 8
 					GoToPointer(f)
 					movename = GetStringFromPointer(f)
+					#print(movename)
 					FollowUpMoveIdx.append([b, movename])
 					f.seek(8, 1)
 					AnimPointer = int.from_bytes(f.read(4),"little")
@@ -1295,7 +1300,7 @@ if filecheck == True:
 							f.seek(currentanimpos+8)
 							c = c + 1
 						f.seek(currentpos)
-					elif movetype == 4:
+					elif movetype == 4 - JacketMod:
 						CommandSetDictionary[(setname)]["Move Table"][movename]["Animation Related Byte 1"] = animbyte1
 						CommandSetDictionary[(setname)]["Move Table"][movename]["Animation Related Byte 2"] = animbyte2
 						CommandSetDictionary[(setname)]["Move Table"][movename]["Animation Related Byte 3"] = animbyte3
@@ -1304,11 +1309,11 @@ if filecheck == True:
 						CommandSetDictionary[(setname)]["Move Table"][movename]["Animation Related Byte 6"] = animbyte6
 						CommandSetDictionary[(setname)]["Move Table"][movename]["Animation Related Byte 7"] = animbyte7
 						CommandSetDictionary[(setname)]["Move Table"][movename]["Animation Related Byte 8"] = animbyte8
-					elif movetype == 3:
+					elif movetype == 3 - JacketMod:
 						CommandSetDictionary[(setname)]["Move Table"][movename]["Moveset IDx"] = animshort2
 						CommandSetDictionary[(setname)]["Move Table"][movename]["Move IDx to Play in Moveset"] = animshort1
 						CommandSetDictionary[(setname)]["Move Table"][movename]["Command Set ID"] = animshort3
-					elif movetype == 17:
+					elif movetype == 17 - JacketMod:
 						useless = "useless"
 					else:
 						AnimName = GetStringFromPointer(f, AnimPointer)
@@ -1408,7 +1413,7 @@ if filecheck == True:
 				while b < NumWepSets + 1:
 					nextwepset = f.tell() + 8
 					GoToPointer(f)
-					if DEGame == 0:
+					if DEGame == 0 or DEGame == 2:
 						f.seek(8, 1)
 						wepcommandset = GetStringFromPointer(f)
 						f.seek(-8, 1)
@@ -1420,7 +1425,7 @@ if filecheck == True:
 					WepPropertiesPointer = int.from_bytes(f.read(4),"little")
 					f.seek(WepPropertiesPointer)
 					if DEGame == 1: CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Command Set ID for Weapon Moveset"] = wepcommandset
-					elif DEGame == 0: CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Command Set Name for Weapon Moveset"] = wepcommandset
+					elif DEGame == 0 or DEGame == 2: CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Command Set Name for Weapon Moveset"] = wepcommandset
 					c = 1
 					while c < numwepproperties + 1:
 						nextweppos = f.tell() + 8
@@ -1686,6 +1691,8 @@ else:
 		newfile = open("fighter_command new.cfc", 'w+b')
 		if VersionDictionary[fileversion] == "Dragon Engine":
 			DEGame = DEGameDictionary[enginegame]
+			if DEGame == 2: JacketMod = 1
+			else: JacketMod = 0
 			newfile.write(b'\x43\x46\x43\x49\x21\x00\x00\x00')#Writes header
 			newfile.write(int_to_bytes(fileversion, 4))
 			newfile.write(b'\x00\x00\x00\x00')#Writes filesize filler
@@ -1818,15 +1825,15 @@ else:
 							if animvalue == "Null":
 								animvalue = b'\x00'
 							AnimationValues.append([animvalue,"Useless"])
-						elif movetype == 3:
+						elif movetype == 3 - JacketMod:
 							animshort2 = jsonfile[commandsetname]["Move Table"][movename]["Moveset IDx"]
 							animshort1 = jsonfile[commandsetname]["Move Table"][movename]["Move IDx to Play in Moveset"]
 							animshort3 = jsonfile[commandsetname]["Move Table"][movename]["Command Set ID"]
 							AnimationValues.append([animshort1, animshort2,animshort3])
-						elif movetype == 17:
+						elif movetype == 17 - JacketMod:
 							animvalue = -1
 							AnimationValues.append([animvalue,"Useless"])
-						elif movetype == 4:
+						elif movetype == 4 - JacketMod:
 							byte1 = jsonfile[commandsetname]["Move Table"][movename]["Animation Related Byte 1"]
 							byte2 = jsonfile[commandsetname]["Move Table"][movename]["Animation Related Byte 2"]
 							byte3 = jsonfile[commandsetname]["Move Table"][movename]["Animation Related Byte 3"]
@@ -1901,14 +1908,14 @@ else:
 						if animtablebool == 1:
 							newfile.write(int_to_bytes(AnimTableTableTablePointer, 4))
 							newfile.write(b'\x00\x00\x00\x00')
-						elif movetype == 3:
+						elif movetype == 3 - JacketMod:
 							newfile.write(int_to_bytes(AnimationValues[0][0], 2))
 							newfile.write(int_to_bytes(AnimationValues[0][1], 2))
 							newfile.write(int_to_bytes(AnimationValues[0][2], 2))
 							newfile.write(b'\x00\x00')
-						elif movetype == 17:
+						elif movetype == 17 - JacketMod:
 							newfile.write(b'\x00\x00\x00\x00\x00\x00\x00\x00')
-						elif movetype == 4:
+						elif movetype == 4 - JacketMod:
 							newfile.write(int_to_bytes(AnimationValues[0][0], 1))
 							newfile.write(int_to_bytes(AnimationValues[0][1], 1))
 							newfile.write(int_to_bytes(AnimationValues[0][2], 1))
@@ -1942,7 +1949,7 @@ else:
 							WeaponPropertyArray = []
 							WeaponPropertyPointers = []
 							numwepprops = len(jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"])
-							if DEGame == 0: 
+							if DEGame == 0 or DEGame == 2: 
 								WeaponCommand = jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Command Set Name for Weapon Moveset"]
 								if WeaponCommand == "Null":
 									WeaponCommand = b'\x00'
