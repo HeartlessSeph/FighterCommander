@@ -11,6 +11,7 @@ import glob
 import argparse
 from collections import OrderedDict
 from collections import defaultdict
+from binary_reader import BinaryReader
 
 
 def bitfield(num):
@@ -135,7 +136,7 @@ def GetStringFromPointer(myfile, pointerval = 0, endiantype = "little"):
 			else:
 				myfile.seek(h)
 				stringver = b''.join(chars)
-				stringver = stringver.decode("utf-8") 
+				stringver = stringver.decode('shift-jis')
 				return stringver
 		else:
 			chars.append(c)
@@ -153,7 +154,7 @@ def GetCommandSetName(myfile, endiantype = "little"):
 		if c == b'\x00':
 			myfile.seek(h)
 			stringver = b''.join(chars)
-			stringver = stringver.decode("utf-8")
+			stringver = stringver.decode('shift-jis')
 			return stringver
 		else:
 			chars.append(c)
@@ -185,22 +186,28 @@ def jsonKeys2int(x):
             return {int(k):v for k,v in x.items()}
     return x
 	
+def stringlistEntryAdd(stringname, stringlist):
+	if stringname == "Null":
+		stringname = b'\x00'
+	stringlist.append(stringname)
+	
 	
 CommandSetDictionary = tree() #Stores Data for Command Sets
+print(CommandSetDictionary)
 CommandSetIDDictionary = OrderedDict() #Stores a list of Command Sets and their ID's for reference.
 CommandSetOrderIDxDictionary = OrderedDict()
 VersionDictionary = OrderedDict() #Stores a list of Version Numbers and their Associated Engine
 VersionDictionary[7] = "Old Engine"
 VersionDictionary[16] = "Dragon Engine"
 VersionDictionary[17] = "Dragon Engine"
-VersionDictionaryHact = {5: "Dragon Engine", 6: "Dragon Engine"}
+VersionDictionaryHact = {3: "Old Engine",5: "Dragon Engine", 6: "Dragon Engine"}
 OEGameDictionary = {"Yakuza 0 / Kiwami 1": 0, "Yakuza 5": 1, "Yakuza Ishin": 2,}
 DEGameDictionary = {"Yakuza 6": 0, "Yakuza Kiwami 2 / Judgement": 1, "Yakuza 6 Blue Jacket Demo": 2,}
 jsonfile = OrderedDict() #Stores the dumped json from file.
 FollowUpMoveIdx = [] #Stores Id's of Moves for follow ups
 ButtonPressListDE = ["Unknown7","Unknown6","Unknown5","D-Pad Right","D-Pad Left","D-Pad Down","D-Pad Up","R2","R1", "L2", "L1", "Cross", "Circle", "Triangle", "Square", "Unknown8"]
 ButtonPressListOE = ["Unknown8","Unknown7","Unknown6","Unknown5","D-Pad Right","D-Pad Left","D-Pad Down","D-Pad Up","L2","R2", "R1", "L1", "Cross", "Circle", "Triangle", "Square"]
-StateModifiersDict = {0: "Unk0", 1: "In Heat Mode", 2: "Unk2", 3: "Run Startup to Full Run", 4: "Enemy Down, Including getting up Animation", 5: "Enemy Standing", 6: "Unk6", 7: "Enemy Down from the Front", 8: "Enemy Down from Behind", 9: "Unk9", 10: "Unk10", 11: "Unk11", 12: "Unk12", 13: "Unk13", 14: "Unk14", 15: "Unk15", 16: "Unk16", 17: "Unk17", 18: "Unk18", 19: "Near Wall", 20: "Unk21", 22: "Unk22", 23: "Unk24", 25: "Unk25", 26: "Unk26", 27: "Unk27", 28: "Unk28", 29: "Lock-On", 30: "Attack Punch", 31: "Full Run", 32: "Unk32", 33: "Unk33", 34: "Unk34", 35: "Unk35", 36: "Unk36", 37: "Unk37", 38: "Full Health", 39: "Extreme Heat", 40: "Yakuza 6 Charge State", 41: "Unk41", 42: "Unk42", 43: "Unk43", 44: "Unk44", 45: "Unk45", 46: "Unk46", 47: "Unk47", 48: "Unk48", 49: "Unk49", 50: "Unk50", 51: "Unk51"}
+StateModifiersDict = {1: "In Heat Mode", 3: "Run Startup to Full Run", 4: "Enemy Down, Including getting up Animation", 5: "Enemy Standing", 7: "Enemy Down from the Front", 8: "Enemy Down from Behind", 19: "Near Wall", 29: "Lock-On", 30: "Attack Punch", 31: "Full Run", 38: "Full Health", 39: "Extreme Heat", 40: "Yakuza 6 Charge State"}
 QuickstepDict = {0: "Front Quickstep", 1: "Left Quickstep", 2: "Back Quickstep", 3: "Right Quickstep"}
 PropertyTypeDictDE = {1: "Button Press", 2: "Button Hold", 3: "Follow Up Start Lock", 4: "Follow Up Lifetime Lock", 5: "State Modifier", 6: "Button Press (Buffered Input)", 7: "Follow Up On Hit", 9: "Analog Deadzone",10: "Weapon Category", 11: "Heat Action", 12: "Enemy Distance", 15: "Target Entity", 19: "Analog Direction", 22: "Quickstep", 23: "Upgrade Unlock", 26: "Timing", 34: "Heat Gear", 41: "Unknown Hact Property" ,48: "Hact Follow Up?"}
 PropertyTypeDictOE = downgradeDictToOE(PropertyTypeDictDE)
@@ -351,8 +358,10 @@ def propertyExtraction(f, extract, d, CurrentPropDict, PropertyDictionary, Engin
 			ConditionalsBitmask = bitfield(PropertyDictionary["propbyte4"])
 			conditional = bitfieldListMask(ConditionalsBitmask, Conditionals)
 			CurrentPropDict["Property "+ str(d) + typedes]["Property Type"] = PropertyDictionary["propint2"]
-			if intswitch == False: 
-				CurrentPropDict["Property "+ str(d) + typedes]["State Type"] = StateModifiersDict[PropertyDictionary["propbyte1"]]
+			if intswitch == False:
+				if PropertyDictionary["propbyte1"] in StateModifiersDict:
+					CurrentPropDict["Property "+ str(d) + typedes]["State Type"] = StateModifiersDict[PropertyDictionary["propbyte1"]]
+				else: CurrentPropDict["Property "+ str(d) + typedes]["State Type"] = "unk" + str(PropertyDictionary["propbyte1"])
 				CurrentPropDict["Property "+ str(d) + typedes]["Conditionals"] = conditional
 			else:
 				CurrentPropDict["Property "+ str(d) + typedes]["State Type"] = PropertyDictionary["propbyte1"]
@@ -361,7 +370,8 @@ def propertyExtraction(f, extract, d, CurrentPropDict, PropertyDictionary, Engin
 			if intswitch == False: 
 				byte1 = jsonfile["State Type"]
 				tempdict = dict([(value, key) for key, value in StateModifiersDict.items()])
-				byte1 = tempdict[byte1]
+				if byte1 in tempdict: byte1 = tempdict[byte1]
+				else: byte1 = int(byte1[3:])
 				conditionalsStrings = jsonfile["Conditionals"]
 				bitslist = iterateStringstoBits(Conditionals, conditionalsStrings)
 				byte4 = bitlistToInteger(bitslist)
@@ -730,6 +740,18 @@ if filecheck == True:
 			
 			
 		if VersionDictionaryHact[fileversion] == "Dragon Engine":
+			print("Please choose which Dragon Engine Game you are extracting from:")
+			print("0 = Yakuza 6")
+			print("1 = Yakuza Kiwami 2/ Judgement")
+			print("2 = Yakuza 6 Blue Jacket Demo")
+			DEGameText = input("Enter a Number: ")
+			DEGame = int(DEGameText)
+			if DEGame > 2:
+				print("An incorrect option was entered. Please restart the program and try again.")
+				input("Press ENTER to exit... ")
+				sys.exit()
+			if DEGame == 2: JacketMod = 1
+			else: JacketMod = 0
 			if fileversion == 6:
 				print("An extracted talk_param is needed to extract this file.")
 				talkparam = input("Please enter the name of the talk param file: ")
@@ -748,6 +770,8 @@ if filecheck == True:
 			a = 0
 			while a < NumHactSets:
 				CommandSetDictionary["File Version"] = fileversion
+				tempdict = dict([(value, key) for key, value in DEGameDictionary.items()])
+				CommandSetDictionary["Dragon Engine Game"] = tempdict[DEGame]
 				if fileversion == 5:
 					setname = GetCommandSetName(f)
 					FollowUpMoveIdx = []
@@ -765,7 +789,14 @@ if filecheck == True:
 						setname = setname + "#" + str(subnumber)
 				HactTargetPointer = int.from_bytes(f.read(4),"little")
 				f.seek(4,1)
-				HactType = int.from_bytes(f.read(4),"little")
+				if DEGame == 0:
+					HactType = GetStringFromPointer(f)
+					f.seek(4, 1)
+				elif DEGame == 1:
+					HactType = int.from_bytes(f.read(4),"little")
+				elif DEGame == 2:
+					print("Feature Incomplete!")
+					f.seek(4, 1)
 				CommandSetID = int.from_bytes(f.read(4),"little")
 				CommandSetIDDictionary[(setname)]= CommandSetID#
 				if fileversion == 5: CommandSetDictionary[(setname)]["Hact ID"] = CommandSetID
@@ -870,6 +901,127 @@ if filecheck == True:
 				json.dump(CommandSetOrderIDxDictionary, outfile, indent=1, ensure_ascii=False)
 			f.close
 			
+		if VersionDictionaryHact[fileversion] == "Old Engine":
+			print("Please choose which Old Engine Game you are extracting from:")
+			print("0 = Yakuza 0/Kiwami 1")
+			print("1 = Yakuza 5")
+			print("2 = Yakuza Ishin")
+			OEGameText = input("Enter a Number: ")
+			OEGame = int(OEGameText)
+			if OEGame > 2:
+				print("An incorrect option was entered. Please restart the program and try again.")
+				input("Press ENTER to exit... ")
+				sys.exit()
+			filesize = int.from_bytes(f.read(4),"big")
+			f.seek(filesize)
+			f.seek(-8, 1)
+			NumHactSets = int.from_bytes(f.read(4),"big")
+			HactSetTable = int.from_bytes(f.read(4),"big")
+			f.seek(HactSetTable)
+
+			a = 0
+			while a < NumHactSets:
+				CommandSetDictionary["File Version"] = fileversion
+				tempdict = dict([(value, key) for key, value in OEGameDictionary.items()])
+				CommandSetDictionary["Old Engine Game"] = tempdict[OEGame]
+				setname = GetCommandSetName(f, "big")
+				print(setname)
+				FollowUpMoveIdx = []
+				nextset = f.tell() + 4
+				GoToPointer(f, 0, "big")
+				f.seek(4, 1)
+				NumTargets = int.from_bytes(f.read(4),"big")
+				HactTargetPointer = int.from_bytes(f.read(4),"big")
+				unktargetval = int.from_bytes(f.read(4),"big")
+				CompletionName = GetStringFromPointer(f, 0, "big")
+				f.seek(4, 1)
+				UnkInt0 = int.from_bytes(f.read(4),"big")
+				UnkInt1 = int.from_bytes(f.read(4),"big")
+				UnkInt2 = int.from_bytes(f.read(4),"big")
+				ConditionName = GetStringFromPointer(f, 0, "big")
+				f.seek(4, 1)
+				UnkInt3 = int.from_bytes(f.read(4),"big")
+				UnkInt4 = int.from_bytes(f.read(4),"big")
+				UnkInt5 = int.from_bytes(f.read(4),"big")
+				
+				CommandSetDictionary[(setname)]["Unknown Target Value"] = unktargetval
+				CommandSetDictionary[(setname)]["Completion Name"] = CompletionName
+				CommandSetDictionary[(setname)]["Unknown Int 0"] = UnkInt0
+				CommandSetDictionary[(setname)]["Unknown Int 1"] = UnkInt1
+				CommandSetDictionary[(setname)]["Unknown Int 2"] = UnkInt2
+				CommandSetDictionary[(setname)]["Condition Name"] = ConditionName
+				CommandSetDictionary[(setname)]["Unknown Int 3"] = UnkInt3
+				CommandSetDictionary[(setname)]["Unknown Int 4"] = UnkInt4
+				CommandSetDictionary[(setname)]["Unknown Int 5"] = UnkInt5
+				f.seek(HactTargetPointer)
+				
+				c = 1
+				while c < NumTargets + 1:
+					nexttarget = f.tell() + 4
+					GoToPointer(f, 0, "big")
+					TargetName = GetStringFromPointer(f, 0, "big")
+					f.seek(4, 1)
+					targetproptype = int.from_bytes(f.read(4),"big")
+					UnkTargetName = GetStringFromPointer(f, 0, "big")
+					f.seek(4, 1)
+					numfollowupprops = int.from_bytes(f.read(4),"big")
+					targetproppointer = int.from_bytes(f.read(4),"big")
+					UnkTargetInteger = int.from_bytes(f.read(4),"big")
+					
+					CommandSetDictionary[(setname)]["Target Table"]["Target " + str(c)]["Target Name"] = TargetName
+					CommandSetDictionary[(setname)]["Target Table"]["Target " + str(c)]["Target Type"] = targetproptype
+					CommandSetDictionary[(setname)]["Target Table"]["Target " + str(c)]["Unk Target Name"] = UnkTargetName
+					CommandSetDictionary[(setname)]["Target Table"]["Target " + str(c)]["Unk Target Integer"] = UnkTargetInteger
+					
+					
+					f.seek(targetproppointer)
+					d = 1
+					while d < numfollowupprops + 1:
+						nextproperty = f.tell() + 4
+						PropertyDictionary = OrderedDict()
+						GoToPointer(f, 0, "big")
+						PropertyDictionary["propint2"] = int.from_bytes(f.read(4),"big")
+						f.seek(-4, 1)
+						PropertyDictionary["propbyte8"] = int.from_bytes(f.read(1),"big")
+						PropertyDictionary["propbyte7"] = int.from_bytes(f.read(1),"big")
+						PropertyDictionary["propbyte6"] = int.from_bytes(f.read(1),"big")
+						PropertyDictionary["propbyte5"] = int.from_bytes(f.read(1),"big")
+						PropertyDictionary["propint1"] = int.from_bytes(f.read(4),"big")
+						f.seek(-4, 1)
+						PropertyDictionary["propbyte4"] = int.from_bytes(f.read(1),"big")
+						PropertyDictionary["propbyte3"] = int.from_bytes(f.read(1),"big")
+						PropertyDictionary["propbyte2"] = int.from_bytes(f.read(1),"big")
+						PropertyDictionary["propbyte1"] = int.from_bytes(f.read(1),"big")
+						f.seek(-4,1)
+						PropertyDictionary["propshort2"] = int.from_bytes(f.read(2),"big")
+						PropertyDictionary["propshort1"] = int.from_bytes(f.read(2),"big")
+						
+						if args.simplenames: typedes = ""
+						else: 
+							if PropertyDictionary["propint2"] in PropertyTypeDictOE:
+								typedes = "| Type " + str(PropertyDictionary["propint2"]) + " = " + PropertyTypeDictOE[PropertyDictionary["propint2"]]
+							else: typedes = ""
+						if args.integers: intswitch = True
+						else: intswitch = False					
+						propertyExtraction(f, True, d, CommandSetDictionary[(setname)]["Target Table"]["Target " + str(c)]["Target Properties"], PropertyDictionary, VersionDictionaryHact[fileversion], fileversion, typedes,intswitch, OrderedDict(), ButtonPressListOE, [])
+						f.seek(nextproperty)
+						d = d + 1
+					c = c + 1
+					f.seek(nexttarget)
+
+				f.seek(nextset)
+				
+				with open(mypath + "\\" + str(setname) + ".json", 'w', encoding = 'shift-jis') as outfile:
+					json.dump(CommandSetDictionary, outfile, indent=2, ensure_ascii=False)
+				CommandSetDictionary.clear()
+				a = a + 1
+				
+				CommandSetOrderIDxDictionary[CommandSetOrderIDx] = setname
+				CommandSetOrderIDx = CommandSetOrderIDx + 1
+				
+			with open("Hact Order List.json", 'w') as outfile:
+				json.dump(CommandSetOrderIDxDictionary, outfile, indent=1, ensure_ascii=False)
+			f.close
 			
 	if extension == ".json":
 		with open(kfile, 'r', encoding='utf8') as file:
@@ -1314,7 +1466,7 @@ if filecheck == True:
 						CommandSetDictionary[(setname)]["Move Table"][movename]["Move IDx to Play in Moveset"] = animshort1
 						CommandSetDictionary[(setname)]["Move Table"][movename]["Command Set ID"] = animshort3
 					elif movetype == 17 - JacketMod:
-						useless = "useless"
+						CommandSetDictionary[(setname)]["Move Table"][movename]["Unk Value"] = AnimPointer
 					else:
 						AnimName = GetStringFromPointer(f, AnimPointer)
 						CommandSetDictionary[(setname)]["Move Table"][movename]["Animation Used"] = AnimName
@@ -1489,19 +1641,20 @@ else:
 	workdir = sys.argv[1]
 	for f in os.listdir(kfile):#Gets file version
 		curfile = workdir + "\\" + f
-		print(curfile)
-		with open(curfile, 'r', encoding='utf8') as file:
+		with open(curfile, 'r', encoding='shift-jis') as file:
 			jsonfile = json.load(file)
 			fileversion = jsonfile["File Version"]
-			tempkey = list(jsonfile.keys())[1]
-			if "Old Engine Game" in jsonfile:
+			tempkey = list(jsonfile.keys())[2]
+			if "Hact ID" in jsonfile[tempkey] or "Condition Name" in jsonfile[tempkey]:
+				filetype = "CHP"
+				if "Old Engine Game" in jsonfile: enginegame = jsonfile["Old Engine Game"]
+				elif "Dragon Engine Game" in jsonfile: enginegame = jsonfile["Dragon Engine Game"]
+			elif "Old Engine Game" in jsonfile:
 				filetype = "CFC"
 				enginegame = jsonfile["Old Engine Game"]
 			elif "Dragon Engine Game" in jsonfile:
 				filetype = "CFC"
 				enginegame = jsonfile["Dragon Engine Game"]
-			elif "Hact ID" in jsonfile[tempkey]:
-				filetype = "CHP"
 			else:
 				filetype = "CFC"
 				enginegame = 0
@@ -1509,6 +1662,7 @@ else:
 	if filetype == "CHP":
 		newfile = open("hact new.chp", 'w+b')
 		if VersionDictionaryHact[fileversion] == "Dragon Engine":
+			DEGame = DEGameDictionary[enginegame]
 			newfile.write(b'\x43\x48\x50\x49\x21\x00\x00\x00')#Writes fileheader
 			newfile.write(int_to_bytes(fileversion, 4))
 			newfile.write(b'\x00\x00\x00\x00')#Writes filler for filesize
@@ -1521,42 +1675,39 @@ else:
 				with open(curfile, 'r', encoding='utf8') as file:
 					jsonfile = json.load(file)
 					fileversion = jsonfile["File Version"]
-					commandsetname = list(jsonfile.keys())[1]
-					if commandsetname == "Null":
-						commandsetname = b'\x00'
-					stringlist.append(commandsetname)
+					commandsetname = list(jsonfile.keys())[2]
+					stringlistEntryAdd(commandsetname, stringlist)
+
 					commandsetID = jsonfile[commandsetname]["Hact ID"]
+					if DEGame == 0:
+						hacttype = jsonfile[commandsetname]["Hact Type"]
+						stringlistEntryAdd(hacttype, stringlist)
+						
 					commandsetnamebase = jsonfile[commandsetname]["Base Hact"]
-					if commandsetnamebase == "Null":
-						commandsetnamebase = b'\x00'
-					stringlist.append(commandsetnamebase)
+					stringlistEntryAdd(commandsetnamebase, stringlist)
+					
 					unknownstring = jsonfile[commandsetname]["Unknown String"]
-					if unknownstring == "Null":
-						unknownstring = b'\x00'
-					stringlist.append(unknownstring)
+					stringlistEntryAdd(unknownstring, stringlist)
+					
 					if "Target Table" in jsonfile[commandsetname]:
 						for target in list(jsonfile[commandsetname]["Target Table"].keys()):
 							targetname = jsonfile[commandsetname]["Target Table"][target]["Target Name"]
-							if targetname == "Null":
-								targetname = b'\x00'
-							stringlist.append(targetname)
+							stringlistEntryAdd(targetname, stringlist)
 							if "Target Properties" in jsonfile[commandsetname]["Target Table"][target]:
 								for property in list(jsonfile[commandsetname]["Target Table"][target]["Target Properties"].keys()):
 									propertytype = jsonfile[commandsetname]["Target Table"][target]["Target Properties"][property]["Property Type"]
 									if propertytype == 48:
 										string = jsonfile[commandsetname]["Target Table"][target]["Target Properties"][property]["Hact (Property)"]
-										if string == "Null":
-											string = b'\x00'
-										stringlist.append(string)
+										stringlistEntryAdd(string, stringlist)
 					CommandSetOrderIDx = CommandSetOrderIDx + 1
 			stringlist = list( dict.fromkeys(stringlist) )
-			x = 0
 			
 			#Writes string list to file collecting the string location and string in a dictionary.
+			x = 0
 			while x < len(stringlist):
 				currentpos = newfile.tell()
 				currentstring = stringlist[x]
-				if currentstring == b'\x00':#Checks if null
+				if currentstring == b'\x00':
 					newfile.write(b'\x00')
 				else:
 					newfile.write(currentstring.encode('utf-8'))
@@ -1571,14 +1722,20 @@ else:
 			orderfile = open("Hact Order List.json", 'rb')
 			CommandSetOrderDictionary = json.load(orderfile)
 			CommandSetOrderIDx = 0
+			print("Beginning string extraction...")
+			print("")
 			while CommandSetOrderIDx < numcommandsets:
 				curfile = workdir + "\\" + CommandSetOrderDictionary[str(CommandSetOrderIDx)] + ".json"
+				print(CommandSetOrderDictionary[str(CommandSetOrderIDx)] + ".json")
 				with open(curfile, 'r', encoding='utf8') as file:
 					jsonfile = json.load(file)
 					hactdata = []
 					fileversion = jsonfile["File Version"]
-					commandsetname = list(jsonfile.keys())[1]
+					commandsetname = list(jsonfile.keys())[2]
 					hacttype = jsonfile[commandsetname]["Hact Type"]
+					if DEGame == 0:
+						if hacttype == "Null":
+							hacttype = b'\x00'
 					commandsetID = jsonfile[commandsetname]["Hact ID"]
 					commandsetnamebase = jsonfile[commandsetname]["Base Hact"]
 					hactunkint1 = unknownstring = jsonfile[commandsetname]["Unknown String"]
@@ -1654,7 +1811,10 @@ else:
 					newfile.write(b'\x00\x00\x00\x00')
 					newfile.write(int_to_bytes(TargetTablePointer, 4))
 					newfile.write(b'\x00\x00\x00\x00')
-					newfile.write(int_to_bytes(hactdata[0][1], 4))
+					if DEGame == 0:
+						newfile.write(int_to_bytes(stringpointerdict[hactdata[0][1]], 4))
+					elif DEGame == 1:
+						newfile.write(int_to_bytes(hactdata[0][1], 4))
 					newfile.write(int_to_bytes(hactdata[0][2], 4))
 					newfile.write(int_to_bytes(stringpointerdict[hactdata[0][4]], 4))
 					newfile.write(b'\x00\x00\x00\x00')
@@ -1685,6 +1845,186 @@ else:
 			file.close
 			newfile.close
 			
+			
+		if VersionDictionaryHact[fileversion] == "Old Engine":
+			OEGame = OEGameDictionary[enginegame]
+			newfile.write(b'\x43\x48\x50\x49\x02\x01\x00\x00')#Writes fileheader
+			newfile.write(int_to_bytes(fileversion, 4, "big"))
+			newfile.write(b'\x00\x00\x00\x00')#Writes filler for filesize
+			numcommandsets = len(os.listdir(kfile))
+			orderfile = open("Hact Order List.json", 'rb')
+			CommandSetOrderDictionary = json.load(orderfile)
+			CommandSetOrderIDx = 0
+			while CommandSetOrderIDx < numcommandsets:#Loops through all Json files and collects string data
+				curfile = workdir + "\\" + CommandSetOrderDictionary[str(CommandSetOrderIDx)] + ".json"
+				with open(curfile, 'r', encoding='shift-jis') as file:
+					jsonfile = json.load(file)
+					fileversion = jsonfile["File Version"]
+					commandsetname = list(jsonfile.keys())[2]
+					stringlistEntryAdd(commandsetname, stringlist)
+					
+					completionname = jsonfile[commandsetname]["Completion Name"]
+					stringlistEntryAdd(completionname, stringlist)
+					
+					conditionname = jsonfile[commandsetname]["Condition Name"]
+					stringlistEntryAdd(conditionname, stringlist)
+					
+					if "Target Table" in jsonfile[commandsetname]:
+						for target in list(jsonfile[commandsetname]["Target Table"].keys()):
+							targetname = jsonfile[commandsetname]["Target Table"][target]["Target Name"]
+							stringlistEntryAdd(targetname, stringlist)
+							
+							unktargetname = jsonfile[commandsetname]["Target Table"][target]["Unk Target Name"]
+							stringlistEntryAdd(unktargetname, stringlist)
+							
+							if "Target Properties" in jsonfile[commandsetname]["Target Table"][target]:
+								for property in list(jsonfile[commandsetname]["Target Table"][target]["Target Properties"].keys()):
+									propertytype = jsonfile[commandsetname]["Target Table"][target]["Target Properties"][property]["Property Type"]
+									if propertytype == 47:
+										string = jsonfile[commandsetname]["Target Table"][target]["Target Properties"][property]["Hact (Property)"]
+										stringlistEntryAdd(string, stringlist)
+									elif propertytype == 22:
+										string = jsonfile[commandsetname]["Target Table"][target]["Target Properties"][property]["Skill Name"]
+										stringlistEntryAdd(string, stringlist)
+					CommandSetOrderIDx = CommandSetOrderIDx + 1
+			stringlist = list( dict.fromkeys(stringlist) )
+			x = 0
+			
+			#Writes string list to file collecting the string location and string in a dictionary.
+			while x < len(stringlist):
+				currentpos = newfile.tell()
+				currentstring = stringlist[x]
+				if currentstring == b'\x00':#Checks if null
+					newfile.write(b'\x00')
+				else:
+					newfile.write(currentstring.encode('shift-jis'))
+					newfile.write(b'\x00')
+				stringpointerdict[currentstring] = currentpos
+				x = x + 1
+			aligntext(newfile)#Adds the CC Byte enders to the end of the string table.
+			
+			#Parsing data from the jsons into hact begins here.
+			CommandSetPointerList = []
+			numcommandsets = len(os.listdir(kfile))
+			orderfile = open("Hact Order List.json", 'rb')
+			CommandSetOrderDictionary = json.load(orderfile)
+			CommandSetOrderIDx = 0
+			print("Beginning string extraction...")
+			print("")
+			while CommandSetOrderIDx < numcommandsets:
+				curfile = workdir + "\\" + CommandSetOrderDictionary[str(CommandSetOrderIDx)] + ".json"
+				print(CommandSetOrderDictionary[str(CommandSetOrderIDx)] + ".json")
+				with open(curfile, 'r', encoding='shift-jis') as file:
+					jsonfile = json.load(file)
+					hactdata = []
+					fileversion = jsonfile["File Version"]
+					commandsetname = list(jsonfile.keys())[2]
+					hactunktgt = jsonfile[commandsetname]["Unknown Target Value"]
+					completionname = jsonfile[commandsetname]["Completion Name"]
+					if completionname == "Null":
+						completionname = b'\x00'
+					hactunkint0 = jsonfile[commandsetname]["Unknown Int 0"]
+					hactunkint1 = jsonfile[commandsetname]["Unknown Int 1"]
+					hactunkint2 = jsonfile[commandsetname]["Unknown Int 2"]
+					conditionname = jsonfile[commandsetname]["Condition Name"]
+					if conditionname == "Null":
+						conditionname = b'\x00'
+					hactunkint3 = jsonfile[commandsetname]["Unknown Int 3"]
+					hactunkint4 = jsonfile[commandsetname]["Unknown Int 4"]
+					hactunkint5 = jsonfile[commandsetname]["Unknown Int 5"]
+					
+					hactdata.append([commandsetname, hactunktgt, completionname,hactunkint0,hactunkint1,hactunkint2,conditionname,hactunkint3,hactunkint4,hactunkint5])
+					TargetPointers = []
+					if "Target Table" in jsonfile[commandsetname]:
+						numtargets = len(jsonfile[commandsetname]["Target Table"])
+					else:
+						numtargets = 0
+					
+					if "Target Table" in jsonfile[commandsetname]:
+						for target in list(jsonfile[commandsetname]["Target Table"].keys()):
+							TargetValues = []
+							TargetPropValues = []
+							TargetValuePointers = []
+							targetname = jsonfile[commandsetname]["Target Table"][target]["Target Name"]
+							targettype = jsonfile[commandsetname]["Target Table"][target]["Target Type"]
+							unktargetname = jsonfile[commandsetname]["Target Table"][target]["Unk Target Name"]
+							unktargetinteger = jsonfile[commandsetname]["Target Table"][target]["Unk Target Integer"]
+							if unktargetname == "Null":
+								unktargetname = b'\x00'
+							if "Target Properties" in jsonfile[commandsetname]["Target Table"][target]:
+								numtargetprops = len(jsonfile[commandsetname]["Target Table"][target]["Target Properties"])
+							else: numtargetprops = 0
+							TargetValues.append([targetname, targettype, unktargetname, unktargetinteger])
+							if "Target Properties" in jsonfile[commandsetname]["Target Table"][target]:
+								for property in list(jsonfile[commandsetname]["Target Table"][target]["Target Properties"].keys()):
+									temparray2 = []
+									temparray2.append(propertyExtraction(f, False, 0, [], [], VersionDictionaryHact[fileversion], fileversion, "", args.integers, jsonfile[commandsetname]["Target Table"][target]["Target Properties"][property], ButtonPressListOE))
+									TargetPropValues.append(temparray2)
+								
+							x = 0
+							TargetPropValuePointers = []
+							while x < numtargetprops:
+								y = 0
+								while y < len(TargetPropValues[x]):
+									currentpos = newfile.tell()
+									TargetPropValuePointers.append(currentpos)
+									writePropertiestoFile(newfile, TargetPropValues[x][y], VersionDictionaryHact[fileversion], fileversion, stringpointerdict)
+									y = y + 1
+								#Writes Move Target Property List to File
+								x = x + 1
+							TargetPropertyListPointer = newfile.tell()
+							y = 0
+							while y < len(TargetPropValuePointers):
+								newfile.write(int_to_bytes(TargetPropValuePointers[y], 4, "big"))
+								y = y + 1
+							TargetPointers.append(newfile.tell())
+					
+							newfile.write(int_to_bytes(stringpointerdict[TargetValues[0][0]], 4, "big"))
+							newfile.write(int_to_bytes(TargetValues[0][1], 4, "big"))
+							newfile.write(int_to_bytes(stringpointerdict[TargetValues[0][2]], 4, "big"))
+							newfile.write(int_to_bytes(len(TargetPropValuePointers), 4, "big"))
+							newfile.write(int_to_bytes(TargetPropertyListPointer, 4, "big"))
+							newfile.write(int_to_bytes(TargetValues[0][3], 4, "big"))
+						x = 0
+						TargetTablePointer = newfile.tell()
+						while x < numtargets:
+							newfile.write(int_to_bytes(TargetPointers[x], 4, "big"))
+							x = x + 1
+					else:
+						TargetTablePointer = newfile.tell()
+						numtargetprops = 0
+					CommandSetPointerList.append(newfile.tell())
+					#commandsetname, hactunktgt, completionname,hactunkint0,hactunkint1,hactunkint2,conditionname,hactunkint3,hactunkint4,hactunkint5
+					newfile.write(int_to_bytes(stringpointerdict[hactdata[0][0]], 4, "big"))
+					newfile.write(int_to_bytes(numtargets, 4, "big"))
+					newfile.write(int_to_bytes(TargetTablePointer, 4, "big"))
+					newfile.write(int_to_bytes(hactdata[0][1], 4, "big"))
+					newfile.write(int_to_bytes(stringpointerdict[hactdata[0][2]], 4, "big"))
+					newfile.write(int_to_bytes(hactdata[0][3], 4, "big"))
+					newfile.write(int_to_bytes(hactdata[0][4], 4, "big"))
+					newfile.write(int_to_bytes(hactdata[0][5], 4, "big"))
+					newfile.write(int_to_bytes(stringpointerdict[hactdata[0][6]], 4, "big"))
+					newfile.write(int_to_bytes(hactdata[0][7], 4, "big"))
+					newfile.write(int_to_bytes(hactdata[0][8], 4, "big"))
+					newfile.write(int_to_bytes(hactdata[0][9], 4, "big"))
+
+					CommandSetOrderIDx = CommandSetOrderIDx + 1
+			x = 0
+			CommandSetsListPointer = newfile.tell()
+			while x < len(CommandSetPointerList):
+				newfile.write(int_to_bytes(CommandSetPointerList[x], 4, "big"))
+				x = x + 1
+			newfile.write(int_to_bytes(len(CommandSetPointerList), 4, "big"))
+			newfile.write(int_to_bytes(CommandSetsListPointer, 4, "big"))
+			filesize = newfile.tell()
+			newfile.close
+			newfile = open("hact new.chp", 'rb+')
+			newfile.seek(12)
+			newfile.write(int_to_bytes(filesize, 4, "big"))
+			file.close
+			newfile.close
+			
+			
 	
 
 	if filetype == "CFC":
@@ -1696,14 +2036,25 @@ else:
 			newfile.write(b'\x43\x46\x43\x49\x21\x00\x00\x00')#Writes header
 			newfile.write(int_to_bytes(fileversion, 4))
 			newfile.write(b'\x00\x00\x00\x00')#Writes filesize filler
+			print("")
+			print("Beginning String Extraction...")
+			print("")
 			for f in os.listdir(kfile):#Loops through all Json files and collects string data
-				print(curfile)
 				curfile = workdir + "\\" + f
+				print(f)
 				with open(curfile, 'r', encoding='utf8') as file:
 					jsonfile = json.load(file)
 					fileversion = jsonfile["File Version"]
 					commandsetname = list(jsonfile.keys())[2]
 					stringlist.append(commandsetname)
+			for f in os.listdir(kfile):#Loops through all Json files and collects string data
+				curfile = workdir + "\\" + f
+				print(f)
+				with open(curfile, 'r', encoding='utf8') as file:
+					jsonfile = json.load(file)
+					fileversion = jsonfile["File Version"]
+					commandsetname = list(jsonfile.keys())[2]
+					#stringlist.append(commandsetname)
 					#commandsetID = jsonfile[commandsetname]["Command Set ID"]
 					for move in list(jsonfile[commandsetname]["Move Table"].keys()):
 						movename = move
@@ -1756,8 +2107,12 @@ else:
 			orderfile = open("Command Set Order List.json", 'rb')
 			CommandSetOrderDictionary = json.load(orderfile)
 			CommandSetOrderIDx = 0
+			print("")
+			print("Beginning Data Extraction...")
+			print("")
 			while CommandSetOrderIDx < numcommandsets:
 				curfile = workdir + "\\" + CommandSetOrderDictionary[str(CommandSetOrderIDx)] + ".json"
+				print(CommandSetOrderDictionary[str(CommandSetOrderIDx)] + ".json")
 				with open(curfile, 'r', encoding='utf8') as file:
 					jsonfile = json.load(file)
 					print(curfile)
@@ -1831,8 +2186,8 @@ else:
 							animshort3 = jsonfile[commandsetname]["Move Table"][movename]["Command Set ID"]
 							AnimationValues.append([animshort1, animshort2,animshort3])
 						elif movetype == 17 - JacketMod:
-							animvalue = -1
-							AnimationValues.append([animvalue,"Useless"])
+							animvalue = jsonfile[commandsetname]["Move Table"][movename]["Unk Value"]
+							AnimationValues.append([animvalue])
 						elif movetype == 4 - JacketMod:
 							byte1 = jsonfile[commandsetname]["Move Table"][movename]["Animation Related Byte 1"]
 							byte2 = jsonfile[commandsetname]["Move Table"][movename]["Animation Related Byte 2"]
@@ -1914,7 +2269,8 @@ else:
 							newfile.write(int_to_bytes(AnimationValues[0][2], 2))
 							newfile.write(b'\x00\x00')
 						elif movetype == 17 - JacketMod:
-							newfile.write(b'\x00\x00\x00\x00\x00\x00\x00\x00')
+							newfile.write(int_to_bytes(AnimationValues[0][0], 4))
+							newfile.write(b'\x00\x00\x00\x00')
 						elif movetype == 4 - JacketMod:
 							newfile.write(int_to_bytes(AnimationValues[0][0], 1))
 							newfile.write(int_to_bytes(AnimationValues[0][1], 1))
@@ -2053,8 +2409,12 @@ else:
 				OEGame = OEGameDictionary[enginegame]
 				setnamekey = 2
 			newfile.write(b'\x43\x46\x43\x49\x02\x01\x00\x00\x00\x00\x00\x07\x00\x00\x00\x00')#Writes header with filesize filler
+			print("")
+			print("Beginning String Extraction...")
+			print("")
 			for f in os.listdir(kfile):#Loops through all Json files and collects string data
 				curfile = workdir + "\\" + f
+				print(f)
 				with open(curfile, 'r', encoding='utf8') as file:
 					jsonfile = json.load(file)
 					fileversion = jsonfile["File Version"]
@@ -2127,8 +2487,12 @@ else:
 			orderfile = open("Command Set Order List.json", 'rb')
 			CommandSetOrderDictionary = json.load(orderfile)
 			CommandSetOrderIDx = 0
+			print("")
+			print("Beginning Data Extraction...")
+			print("")
 			while CommandSetOrderIDx < numcommandsets:
 				curfile = workdir + "\\" + CommandSetOrderDictionary[str(CommandSetOrderIDx)] + ".json"
+				print(CommandSetOrderDictionary[str(CommandSetOrderIDx)] + ".json")
 				with open(curfile, 'r', encoding='utf8') as file:
 					jsonfile = json.load(file)
 					MovePointers = []
