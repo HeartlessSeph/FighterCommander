@@ -102,14 +102,14 @@ def int_to_bytes(n, minlen=0, endiantype = "little"):
 		b = padding
 	return b
 	
-def aligntext(myfile):
+def aligntext(myfile, byte = b'\xCC'):
 	currentpos = myfile.tell()
 	numfiller = 8 - (currentpos % 8)
 	if numfiller == 0:
 		numfiller = 8
 	x = 0
 	while x < numfiller:
-		myfile.write(b'\xCC')
+		myfile.write(byte)
 		x = x + 1
 
 def tree():
@@ -938,21 +938,23 @@ if filecheck == True:
 				UnkInt0 = int.from_bytes(f.read(4),"big")
 				UnkInt1 = int.from_bytes(f.read(4),"big")
 				UnkInt2 = int.from_bytes(f.read(4),"big")
-				ConditionName = GetStringFromPointer(f, 0, "big")
-				f.seek(4, 1)
-				UnkInt3 = int.from_bytes(f.read(4),"big")
-				UnkInt4 = int.from_bytes(f.read(4),"big")
-				UnkInt5 = int.from_bytes(f.read(4),"big")
+				if OEGame != 1:
+					ConditionName = GetStringFromPointer(f, 0, "big")
+					f.seek(4, 1)
+					UnkInt3 = int.from_bytes(f.read(4),"big")
+					UnkInt4 = int.from_bytes(f.read(4),"big")
+					UnkInt5 = int.from_bytes(f.read(4),"big")
 				
 				CommandSetDictionary[(setname)]["Unknown Target Value"] = unktargetval
 				CommandSetDictionary[(setname)]["Completion Name"] = CompletionName
 				CommandSetDictionary[(setname)]["Unknown Int 0"] = UnkInt0
 				CommandSetDictionary[(setname)]["Unknown Int 1"] = UnkInt1
 				CommandSetDictionary[(setname)]["Unknown Int 2"] = UnkInt2
-				CommandSetDictionary[(setname)]["Condition Name"] = ConditionName
-				CommandSetDictionary[(setname)]["Unknown Int 3"] = UnkInt3
-				CommandSetDictionary[(setname)]["Unknown Int 4"] = UnkInt4
-				CommandSetDictionary[(setname)]["Unknown Int 5"] = UnkInt5
+				if OEGame != 1:
+					CommandSetDictionary[(setname)]["Condition Name"] = ConditionName
+					CommandSetDictionary[(setname)]["Unknown Int 3"] = UnkInt3
+					CommandSetDictionary[(setname)]["Unknown Int 4"] = UnkInt4
+					CommandSetDictionary[(setname)]["Unknown Int 5"] = UnkInt5
 				f.seek(HactTargetPointer)
 				
 				c = 1
@@ -1024,10 +1026,10 @@ if filecheck == True:
 			f.close
 			
 	if extension == ".json":
-		with open(kfile, 'r', encoding='utf8') as file:
+		with open(kfile, 'r', encoding='shift-jis') as file:
 			jsonfile = json.load(file)
 			if "Old Engine Game" in jsonfile: commandsetname = list(jsonfile.keys())[2] 
-			else: commandsetname = list(jsonfile.keys())[1]
+			else: commandsetname = list(jsonfile.keys())[2]
 			x = 0
 			MoveIDXDict = OrderedDict()
 			for move in list(jsonfile[commandsetname]["Move Table"].keys()):
@@ -1645,7 +1647,7 @@ else:
 			jsonfile = json.load(file)
 			fileversion = jsonfile["File Version"]
 			tempkey = list(jsonfile.keys())[2]
-			if "Hact ID" in jsonfile[tempkey] or "Condition Name" in jsonfile[tempkey]:
+			if "Hact ID" in jsonfile[tempkey] or "Completion Name" in jsonfile[tempkey] or "Condition Name" in jsonfile[tempkey]:
 				filetype = "CHP"
 				if "Old Engine Game" in jsonfile: enginegame = jsonfile["Old Engine Game"]
 				elif "Dragon Engine Game" in jsonfile: enginegame = jsonfile["Dragon Engine Game"]
@@ -1866,8 +1868,9 @@ else:
 					completionname = jsonfile[commandsetname]["Completion Name"]
 					stringlistEntryAdd(completionname, stringlist)
 					
-					conditionname = jsonfile[commandsetname]["Condition Name"]
-					stringlistEntryAdd(conditionname, stringlist)
+					if OEGame != 1:
+						conditionname = jsonfile[commandsetname]["Condition Name"]
+						stringlistEntryAdd(conditionname, stringlist)
 					
 					if "Target Table" in jsonfile[commandsetname]:
 						for target in list(jsonfile[commandsetname]["Target Table"].keys()):
@@ -1901,7 +1904,10 @@ else:
 					newfile.write(b'\x00')
 				stringpointerdict[currentstring] = currentpos
 				x = x + 1
-			aligntext(newfile)#Adds the CC Byte enders to the end of the string table.
+			if OEGame == 1: 
+				alignbyte = b'\x00'
+			else: alignbyte = b'\xCC'
+			aligntext(newfile, alignbyte)#Adds the CC Byte enders to the end of the string table.
 			
 			#Parsing data from the jsons into hact begins here.
 			CommandSetPointerList = []
@@ -1926,14 +1932,15 @@ else:
 					hactunkint0 = jsonfile[commandsetname]["Unknown Int 0"]
 					hactunkint1 = jsonfile[commandsetname]["Unknown Int 1"]
 					hactunkint2 = jsonfile[commandsetname]["Unknown Int 2"]
-					conditionname = jsonfile[commandsetname]["Condition Name"]
-					if conditionname == "Null":
-						conditionname = b'\x00'
-					hactunkint3 = jsonfile[commandsetname]["Unknown Int 3"]
-					hactunkint4 = jsonfile[commandsetname]["Unknown Int 4"]
-					hactunkint5 = jsonfile[commandsetname]["Unknown Int 5"]
-					
-					hactdata.append([commandsetname, hactunktgt, completionname,hactunkint0,hactunkint1,hactunkint2,conditionname,hactunkint3,hactunkint4,hactunkint5])
+					if OEGame != 1:
+						conditionname = jsonfile[commandsetname]["Condition Name"]
+						if conditionname == "Null":
+							conditionname = b'\x00'
+						hactunkint3 = jsonfile[commandsetname]["Unknown Int 3"]
+						hactunkint4 = jsonfile[commandsetname]["Unknown Int 4"]
+						hactunkint5 = jsonfile[commandsetname]["Unknown Int 5"]
+						hactdata.append([commandsetname, hactunktgt, completionname,hactunkint0,hactunkint1,hactunkint2,conditionname,hactunkint3,hactunkint4,hactunkint5])
+					else: hactdata.append([commandsetname, hactunktgt, completionname,hactunkint0,hactunkint1,hactunkint2])
 					TargetPointers = []
 					if "Target Table" in jsonfile[commandsetname]:
 						numtargets = len(jsonfile[commandsetname]["Target Table"])
@@ -1949,6 +1956,8 @@ else:
 							targettype = jsonfile[commandsetname]["Target Table"][target]["Target Type"]
 							unktargetname = jsonfile[commandsetname]["Target Table"][target]["Unk Target Name"]
 							unktargetinteger = jsonfile[commandsetname]["Target Table"][target]["Unk Target Integer"]
+							if targetname == "Null":
+								targetname = b'\x00'
 							if unktargetname == "Null":
 								unktargetname = b'\x00'
 							if "Target Properties" in jsonfile[commandsetname]["Target Table"][target]:
@@ -2003,10 +2012,11 @@ else:
 					newfile.write(int_to_bytes(hactdata[0][3], 4, "big"))
 					newfile.write(int_to_bytes(hactdata[0][4], 4, "big"))
 					newfile.write(int_to_bytes(hactdata[0][5], 4, "big"))
-					newfile.write(int_to_bytes(stringpointerdict[hactdata[0][6]], 4, "big"))
-					newfile.write(int_to_bytes(hactdata[0][7], 4, "big"))
-					newfile.write(int_to_bytes(hactdata[0][8], 4, "big"))
-					newfile.write(int_to_bytes(hactdata[0][9], 4, "big"))
+					if OEGame != 1:
+						newfile.write(int_to_bytes(stringpointerdict[hactdata[0][6]], 4, "big"))
+						newfile.write(int_to_bytes(hactdata[0][7], 4, "big"))
+						newfile.write(int_to_bytes(hactdata[0][8], 4, "big"))
+						newfile.write(int_to_bytes(hactdata[0][9], 4, "big"))
 
 					CommandSetOrderIDx = CommandSetOrderIDx + 1
 			x = 0
