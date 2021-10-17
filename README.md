@@ -1,21 +1,42 @@
 # Fighter Commander
-A work in progress Fighter Command.cfc extractor and repacker for Yakuza games.
+A work in progress Fighter Command.cfc & Hact.chp extractor and repacker for Yakuza games.
 
-This tool exports fighter_command.cfc command sets into editable json files that can then repacked and imported into the game. This allows full control of moveset strings, follow ups, move conditions, weapon movesets and likely more. 
+This tool exports fighter_command.cfc command sets and Hact.chp heat actions into editable json files that can then repacked and imported into the game. This allows full control of moveset strings, follow ups, move conditions, weapon movesets, heat action conditions and more. 
 
-To use, drag and drop fighter_command.cfc onto Fighter_Commander.exe. If extracting an Old Engine game, an option will appear asking you to select which game you are extracting from. This will extract a list of jsons into a folder named "Fighter Command" and create a reference file with a list of the command sets and their corresponding Command Set ID. After making any edits you want to the movesets, simply drag the "Fighter Command" folder onto Fighter_Commander.exe to repack.
+**COMPATABILITY:**
 
-Some things to note:
+The tool currently supports:
+• Yakuza 5
+• Yakuza Ishin
+• Yakuza 0
+• Yakuza Kiwami 1
+• Yakuza 6
+• Yakuza Kiwami 2
+• Fist of the North Star Lost Paradise (Hact.chp support currently unknown)
+• Judgment (Hact.chp can be extracted but repacking is currently not supported)
 
-•There are still a bunch of undocumented variables. Values or bytes that are documented will be included in updates to this tool as they are found. As such, if you release a moveset mod, please include the exact version of the tool used if you are including only the json as future updates of the tool might become incompatible.
+**USAGE:**
 
-•For Dragon Engine, this has only been thoroughly tested with Kiwami 2. It seems to correctly extract the cfc's of Yakuza 6 and Judgement, but I can't be 100% sure that those correctly compile after being extracted. As such, if you attempt to do so and find errors, please include them in issues so I can address them. I also added support for Yakuza 0, Kiwami 1 and Yakuza 5. It may support Yakuza Ishin but it has yet to be tested.
+• fighter_command.cfc: Drag and drop the cfc file of the game you are extracting onto Fighter_Commander.exe and select the appropriate game option. After extracting, a new folder named "Fighter Command" will be created with all the movesets in the game represented by multiple json files. After making the edits you want to make to the movesets, drag and drop the "Fighter Command" folder onto Fighter_Commander.exe to repack the cfc file. The newly created file will be named "fighter_command new.cfc". You can then rename the file and insert it into the game.
 
-•Despite the fact that it seems to correctly compile, this is a work in progress tool and has only been tested in game during premium adventure. I have not done a full playthrough to test so please expect errors and report them if they pop up.
+• hact.chp: Drag and drop the chp file of the game you are extracting onto Fighter_Commander.exe and select the appropriate game option. If you are extracting hact.chp from Judgment or Yakuza Like a Dragon, you will first need to extract talk_param.bin using reARMP by Retraso (download from https://github.com/CapitanRetraso/reARMP). Place the extract talk_param.bin in the same folder as Fighter Commander and follow the instructions given by Fighter Commander. After extracting, a new folder named "Hact CHP" will be created with all the heat actions in the game represented by multiple json files. After making the edits you want to make to the movesets, drag and drop the "Hact CHP" folder onto Fighter_Commander.exe to repack the chp file. The newly created file will be named "hact new.chp". You can then rename the file and insert it into the game.
+
+**MISC USAGE**:
+
+• Dragging and dropping a json file from an extracted Fighter_Command.cfc will give a list of moves from that command set and the idx of that move (for use with move types that references move idx's)
+
+• Running Fighter_Commander.exe by itself will ask if you want to extract the internal dictionaries. Doing this will allow you to edit the enums used in the extracted files (for example, if you find out what the actual usage for an "unknown" enum is you can extract the dictionaries and add the name of it to the dictionaries. Re-extracting the file will then show the added enums you added.)
 
 
-CREDITS:
+**DISCLAIMER:**
+
+Please note that there are still a bunch of undocumented variables. Values or bytes that are documented will be included in updates to this tool as they are found. As such, if you release a moveset mod, please include the exact version of the tool used if you are including only the json as future updates of the tool might become incompatible.
+
+
+**CREDITS:**
 
 Massive thanks to Capitan Retraso for his Fighter Command notes and for helping me out on finding the move table.
 
 Also a massive thanks to ChuckP, who has done a lot of documentation for follow up property types.
+
+Thank you to Draxx182 for documenting Hact.chp for all of the Old Engine games. Support for those files likely would not have been added otherwise.
