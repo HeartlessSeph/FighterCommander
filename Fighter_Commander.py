@@ -213,7 +213,7 @@ PropertyTypeDictDE = {1: "Button Press", 2: "Button Hold", 3: "Follow Up Start L
 PropertyTypeDictOE = downgradeDictToOE(PropertyTypeDictDE)
 Conditionals = ["NOT", "Upon Action Completion","Unknown3","Unknown4","Unknown5","Unknown6","Unknown7","Unknown8"]
 TargetEntityDict = {0: "User", 1: "Enemy"}
-TargetConditional = {0: "Unk0", 1: "Anywhere?", 2: "Target in Front", 3: "Unk3", 4: "Unk4", 5: "Unk5", 6: "Target Behind"}
+TargetConditional = {1: "Anywhere?", 2: "Target in Front", 6: "Target Behind"}
 ListList = ["ButtonPressListDE","ButtonPressListOE","Conditionals"]
 DictList = ["StateModifiersDict","QuickstepDict","PropertyTypeDictDE", "TargetEntityDict", "TargetConditional"]
 ListFin = []
@@ -439,7 +439,9 @@ def propertyExtraction(f, extract, d, CurrentPropDict, PropertyDictionary, Engin
 			if intswitch == False:
 				CurrentPropDict["Property "+ str(d) + typedes]["Target"] = TargetEntityDict[PropertyDictionary["propbyte1"]]
 				CurrentPropDict["Property "+ str(d) + typedes]["Unk Byte 2"] = PropertyDictionary["propbyte2"]
-				CurrentPropDict["Property "+ str(d) + typedes]["Target Position"] = TargetConditional[PropertyDictionary["propbyte3"]]
+				if PropertyDictionary["propbyte3"] in TargetConditional:
+					CurrentPropDict["Property "+ str(d) + typedes]["Target Position"] = TargetConditional[PropertyDictionary["propbyte3"]]
+				else: CurrentPropDict["Property "+ str(d) + typedes]["Target Position"] = "unk" + str(PropertyDictionary["propbyte3"])
 				CurrentPropDict["Property "+ str(d) + typedes]["Unk Byte 4"] = PropertyDictionary["propbyte4"]
 			else:
 				CurrentPropDict["Property "+ str(d) + typedes]["Target"] = PropertyDictionary["propbyte1"]
@@ -453,10 +455,11 @@ def propertyExtraction(f, extract, d, CurrentPropDict, PropertyDictionary, Engin
 				byte1 = tempdict[byte1]
 			else: byte1 = jsonfile["Target"]
 			byte2 = jsonfile["Unk Byte 2"]
-			if intswitch == False: 
+			if intswitch == False:
 				byte3 = jsonfile["Target Position"]
 				tempdict = dict([(value, key) for key, value in TargetConditional.items()]) 
-				byte3 = tempdict[byte3]
+				if byte3 in tempdict: byte3 = tempdict[byte3]
+				else: byte3 = int(byte3[3:])
 			else: byte3 = jsonfile["Target Position"]
 			byte4 = jsonfile["Unk Byte 4"]
 			extracttype = "4 Bytes"
@@ -800,7 +803,7 @@ if filecheck == True:
 				CommandSetID = int.from_bytes(f.read(4),"little")
 				CommandSetIDDictionary[(setname)]= CommandSetID#
 				if fileversion == 5: CommandSetDictionary[(setname)]["Hact ID"] = CommandSetID
-				elif fileversion == 6: CommandSetDictionary[(setname)]["Hact ID"] = setID
+				elif fileversion == 6: pass#CommandSetDictionary[(setname)]["Hact ID"] = setID
 				CommandSetDictionary[(setname)]["Hact Type"] = HactType
 				if fileversion == 5:
 					UnkListing = GetStringFromPointer(f)
