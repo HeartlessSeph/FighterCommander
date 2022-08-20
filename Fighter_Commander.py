@@ -209,7 +209,18 @@ ButtonPressListDE = ["Unknown7","Unknown6","Unknown5","D-Pad Right","D-Pad Left"
 ButtonPressListOE = ["Unknown8","Unknown7","Unknown6","Unknown5","D-Pad Right","D-Pad Left","D-Pad Down","D-Pad Up","L2","R2", "R1", "L1", "Cross", "Circle", "Triangle", "Square"]
 StateModifiersDict = {1: "In Heat Mode", 3: "Run Startup to Full Run", 4: "Enemy Down, Including getting up Animation", 5: "Enemy Standing", 7: "Enemy Down from the Front", 8: "Enemy Down from Behind", 19: "Near Wall", 29: "Lock-On", 30: "Attack Punch", 31: "Full Run", 38: "Full Health", 39: "Extreme Heat", 40: "Yakuza 6 Charge State"}
 QuickstepDict = {0: "Front Quickstep", 1: "Left Quickstep", 2: "Back Quickstep", 3: "Right Quickstep"}
-PropertyTypeDictDE = {1: "Button Press", 2: "Button Hold", 3: "Follow Up Start Lock", 4: "Follow Up Lifetime Lock", 5: "State Modifier", 6: "Button Press (Buffered Input)", 7: "Follow Up On Hit", 9: "Analog Deadzone",10: "Weapon Category", 11: "Heat Action", 12: "Enemy Distance", 15: "Target Entity", 19: "Analog Direction", 22: "Quickstep", 23: "Upgrade Unlock", 26: "Timing", 34: "Heat Gear", 41: "Unknown Hact Property" ,48: "Hact Follow Up?"}
+PropertyTypeDictDE = {1: "Button Press", 2: "Button Hold", 3: "Follow Up Start Lock", 4: "Follow Up Lifetime Lock",
+                      5: "Fighter Status", 6: "Button Press (Buffered Input)", 7: "Follow Up On Hit", 8: "Outer",
+                      9: "Analog Deadzone", 10: "Weapon Category", 11: "Heat Action", 12: "Distance Limit",
+                      13: "Angle Limit", 14: "Target Status", 15: "Target Change", 16: "Range", 17: "Weapon ID",
+                      18: "Height", 19: "Analog Direction", 20: "Charge", 21: "Change Auth", 22: "Quickstep",
+                      23: "Skill Required", 24: "Have Item", 25: "Ctrl Type", 26: "Timing", 27: "Pickup",
+                      28: "Button Renda", 29: "Combo Number", 30: "Sync Role", 31: "Custom", 32: "Combo Speed",
+                      33: "Battle Style", 34: "Heat Gear Level", 35: "Height Param", 36: "Damage Hit",
+                      37: "Motion ID", 38: "Stun", 39: "Heat Level", 40: "Push Fighter", 41: "Unknown Hact Property",
+                      41: "Range ID", 42: "Pickup Narrow", 43: "Charge Time", 44: "Charge Level", 45: "Buff Style",
+                      46: "Player Skill", 47: "Charge Type", 48: "Hact not used", 49: "Reaction Type", 50: "Item Buff",
+                      51: "Dist Area", 52: "Defence Success", 53: "Skill Success", 54: "Skill Failed", 55: "Player ID", 56: "Num"}
 PropertyTypeDictOE = downgradeDictToOE(PropertyTypeDictDE)
 Conditionals = ["NOT", "Upon Action Completion","Unknown3","Unknown4","Unknown5","Unknown6","Unknown7","Unknown8"]
 TargetEntityDict = {0: "User", 1: "Enemy"}
@@ -1586,6 +1597,7 @@ if filecheck == True:
 					c = 1
 					while c < numwepproperties + 1:
 						nextweppos = f.tell() + 8
+						PropertyDictionary = OrderedDict()
 						GoToPointer(f)
 						PropertyDictionary["propbyte1"] = int.from_bytes(f.read(1),"little")
 						PropertyDictionary["propbyte2"] = int.from_bytes(f.read(1),"little")
