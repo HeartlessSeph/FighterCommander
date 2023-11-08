@@ -1385,6 +1385,7 @@ if filecheck == True:
 				nextset = f.tell() + 8
 				GoToPointer(f)
 				f.seek(8, 1)
+				#DEGameDictionary = {"Yakuza 6": 0, "Yakuza Kiwami 2 / Judgement": 1, "Yakuza 6 Blue Jacket Demo": 2,}
 				if DEGame == 1:
 					CommandSetID = int.from_bytes(f.read(4),"little")
 					CommandSetIDDictionary[(setname)]= CommandSetID#
@@ -1425,8 +1426,11 @@ if filecheck == True:
 					animshort3 = int.from_bytes(f.read(2),"little")
 					animshort4 = int.from_bytes(f.read(2),"little")
 					FollowUpsPointer = int.from_bytes(f.read(4),"little")
-					f.seek(12, 1)
-					NumFollowUps = int.from_bytes(f.read(2),"little")
+					f.seek(4, 1)
+					AdditionalPropsPointer = int.from_bytes(f.read(4),"little")
+					f.seek(4, 1)
+					NumFollowUps = int.from_bytes(f.read(1),"little")
+					NumAdditionalProps = int.from_bytes(f.read(1),"little")
 					AnimTableBool = int.from_bytes(f.read(1),"little")
 					movetype = int.from_bytes(f.read(1),"little")
 					CommandSetDictionary[(setname)]["Move Table"][movename]["Move Type"] = movetype
@@ -1543,8 +1547,23 @@ if filecheck == True:
 							d = d + 1
 						c = c + 1
 						f.seek(nextfollowup)
-					f.seek(nextmove)
+					
+			#Additional Move Properties-------------------------------------------------------------------------------
+					f.seek(AdditionalPropsPointer)
+					c = 1
+					while c < NumAdditionalProps + 1:
+						nextadditionalprop = f.tell() + 8
+						GoToPointer(f, 0, "little")
+						movepropshort1 = int.from_bytes(f.read(2),"little")
+						movepropshort2 = int.from_bytes(f.read(2),"little")
+						CommandSetDictionary[(setname)]["Move Table"][movename]["Additional Properties Table"]["Additional Property " + str(c)]["Unk Short 1"] = movepropshort1
+						CommandSetDictionary[(setname)]["Move Table"][movename]["Additional Properties Table"]["Additional Property " + str(c)]["Unk Short 2"] = movepropshort2
+						c = c + 1
+						f.seek(nextadditionalprop)		
+			#Additional Move Properties-------------------------------------------------------------------------------
+					
 			#Follow Up Tables-----------------------------------------------------------------------------------------
+					f.seek(nextmove)
 					b = b + 1
 					
 					
@@ -1558,7 +1577,8 @@ if filecheck == True:
 					f.seek(16, 1)
 					FollowUpsPointer = int.from_bytes(f.read(4),"little")
 					f.seek(12, 1)
-					NumFollowUps = int.from_bytes(f.read(2),"little")
+					NumFollowUps = int.from_bytes(f.read(1),"little")
+					FollowUpRelatedByte = int.from_bytes(f.read(1),"little")
 					f.seek(FollowUpsPointer)
 					c = 1
 					while c < NumFollowUps + 1:
@@ -2164,6 +2184,8 @@ else:
 						AnimationTableValues = []
 						AnimationValues = []
 						AnimationTablePointers = []
+						AdditionalMoveProps = []
+						AdditionalMovePropsPointers = []
 						movename = move
 						movetype = jsonfile[commandsetname]["Move Table"][movename]["Move Type"]
 						animtablebool = jsonfile[commandsetname]["Move Table"][movename]["Animation Table Bool"]
@@ -2223,6 +2245,14 @@ else:
 							byte7 = jsonfile[commandsetname]["Move Table"][movename]["Animation Related Byte 7"]
 							byte8 = jsonfile[commandsetname]["Move Table"][movename]["Animation Related Byte 8"]
 							AnimationValues.append([byte1,byte2,byte3,byte4,byte5,byte6,byte7,byte8])
+						if "Additional Properties Table" in jsonfile[commandsetname]["Move Table"][movename]:
+							numadditionalprops = len(jsonfile[commandsetname]["Move Table"][movename]["Additional Properties Table"])
+							for moveproperty in list(jsonfile[commandsetname]["Move Table"][movename]["Additional Properties Table"].keys()):
+								unkshort1 = jsonfile[commandsetname]["Move Table"][movename]["Additional Properties Table"][moveproperty]["Unk Short 1"]
+								unkshort2 = jsonfile[commandsetname]["Move Table"][movename]["Additional Properties Table"][moveproperty]["Unk Short 2"]
+								AdditionalMoveProps.append([unkshort1, unkshort2])
+						else:
+							numadditionalprops = 0
 						
 						
 						#Writes Move to File
@@ -2249,6 +2279,16 @@ else:
 							newfile.write(int_to_bytes(FollowUpPropertyListPointer, 4))
 							newfile.write(b'\x00\x00\x00\x00')
 							x = x + 1
+							
+						x = 0
+						AdditionalMovePropsPointers = []
+						while x < numadditionalprops:
+							currentpos = newfile.tell()
+							AdditionalMovePropsPointers.append(currentpos)
+							newfile.write(int_to_bytes(AdditionalMoveProps[x][0], 2, "little"))
+							newfile.write(int_to_bytes(AdditionalMoveProps[x][1], 2, "little"))
+							x = x + 1
+							
 						if animtablebool == 1:
 							x = 0
 							while x < len(AnimationTableValues):
@@ -2281,6 +2321,13 @@ else:
 							newfile.write(int_to_bytes(FollowUpPointers[x], 4))
 							newfile.write(b'\x00\x00\x00\x00')
 							x = x + 1
+						x = 0
+						AdditionalMovePropsPointer = newfile.tell()
+						while x < numadditionalprops:
+							#Writes Move Additional Property List to File
+							newfile.write(int_to_bytes(AdditionalMovePropsPointers[x], 4, "little"))
+							newfile.write(b'\x00\x00\x00\x00')
+							x = x + 1
 						MovePointers.append(newfile.tell())
 						curmovepointer = newfile.tell()
 						newfile.write(int_to_bytes(stringpointerdict[movename], 4))
@@ -2310,9 +2357,10 @@ else:
 							newfile.write(b'\x00\x00\x00\x00')
 						newfile.write(int_to_bytes(FollowUpTablePointer, 4))
 						newfile.write(b'\x00\x00\x00\x00')
-						newfile.write(int_to_bytes(curmovepointer, 4))
+						newfile.write(int_to_bytes(AdditionalMovePropsPointer, 4))
 						newfile.write(b'\x00\x00\x00\x00')
-						newfile.write(int_to_bytes(numfollowups, 2))
+						newfile.write(int_to_bytes(numfollowups, 1))
+						newfile.write(int_to_bytes(numadditionalprops, 1))
 						newfile.write(int_to_bytes(animtablebool, 1))
 						newfile.write(int_to_bytes(movetype, 1))
 						newfile.write(b'\x00\x00\x00\x00')
