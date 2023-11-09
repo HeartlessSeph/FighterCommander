@@ -323,15 +323,19 @@ def propertyExtraction(f, extract, d, CurrentPropDict, PropertyDictionary, Engin
 			if intswitch == False: 
 				CurrentPropDict["Property "+ str(d) + typedes]["Button Press"] = buttonpress
 				CurrentPropDict["Property "+ str(d) + typedes]["Conditionals"] = conditional
+				CurrentPropDict["Property "+ str(d) + typedes]["Conditionals"] = conditional
+				CurrentPropDict["Property "+ str(d) + typedes]["Additional Conditional"] = PropertyDictionary["propbyte3"]
 			else: 
 				CurrentPropDict["Property "+ str(d) + typedes]["Button Press (1)"] = PropertyDictionary["propbyte1"]
 				CurrentPropDict["Property "+ str(d) + typedes]["Button Press (2)"] = PropertyDictionary["propbyte2"]
 				CurrentPropDict["Property "+ str(d) + typedes]["Conditionals"] = PropertyDictionary["propbyte4"]
+				CurrentPropDict["Property "+ str(d) + typedes]["Additional Conditional"] = PropertyDictionary["propbyte3"]
 		else:
 			if intswitch == False:
 				buttonpressStrings = jsonfile["Button Press"]
 				bitslist = iterateStringstoBits(ButtonPressList, buttonpressStrings)
 				short1 = bitlistToInteger(bitslist)
+				byte3 = jsonfile["Additional Conditional"]
 
 				conditionalsStrings = jsonfile["Conditionals"]
 				bitslist = iterateStringstoBits(Conditionals, conditionalsStrings)
@@ -339,12 +343,13 @@ def propertyExtraction(f, extract, d, CurrentPropDict, PropertyDictionary, Engin
 			else:
 				byte1 = jsonfile["Button Press (1)"]
 				byte2 = jsonfile["Button Press (2)"]
+				byte3 = jsonfile["Additional Conditional"]
 				byte1 = int_to_bytes(byte1)
 				byte2 = int_to_bytes(byte2)
 				short1 = int.from_bytes(byte1+byte2, "little")
 				byte4 = jsonfile["Conditionals"]
 			extracttype = "Short & 2 Bytes"
-			temparray.extend((extracttype,propertytype,short1,0,byte4))
+			temparray.extend((extracttype,propertytype,short1,byte3,byte4))
 			
 	elif PropType == 3:
 		if extract == True:
