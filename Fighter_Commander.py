@@ -271,7 +271,7 @@ if (len(sys.argv) <= 1):
 	sys.exit()
 	
 
-def propertyExtraction(f, extract, d, CurrentPropDict, PropertyDictionary, EngineVersion, fileversion, typedes, intswitch, jsonfile, ButtonPressList = ButtonPressListDE, hactnamedict = [], Conditionals = Conditionals, StateModifiersDict = StateModifiersDict, QuickstepDict = QuickstepDict, TargetEntityDict = TargetEntityDict, TargetConditional = TargetConditional):
+def propertyExtraction(f, extract, d, CurrentPropDict, PropertyDictionary, EngineVersion, fileversion, typedes, jsonfile, ButtonPressList = ButtonPressListDE, hactnamedict = [], Conditionals = Conditionals, StateModifiersDict = StateModifiersDict, QuickstepDict = QuickstepDict, TargetEntityDict = TargetEntityDict, TargetConditional = TargetConditional):
 	if EngineVersion == "Dragon Engine":
 		OEMod = 0
 	elif EngineVersion == "Old Engine":
@@ -310,7 +310,7 @@ def propertyExtraction(f, extract, d, CurrentPropDict, PropertyDictionary, Engin
 				extracttype = "Pointer"
 				temparray.extend((extracttype,propertytype, heataction))
 				
-	elif PropType == 1 or PropType == 2 or PropType == 6:
+	elif PropType in [1,2,6]:
 		if extract == True:
 			ButtonPressBitmask1 = bitfield(PropertyDictionary["propbyte1"])
 			ButtonPressBitmask2 = bitfield(PropertyDictionary["propbyte2"])
@@ -320,47 +320,22 @@ def propertyExtraction(f, extract, d, CurrentPropDict, PropertyDictionary, Engin
 			buttonpress = bitfieldListMask(ButtonPressBitmask, ButtonPressList)
 			conditional = bitfieldListMask(ConditionalsBitmask, Conditionals)
 			CurrentPropDict["Property "+ str(d) + typedes]["Property Type"] = PropertyDictionary["propint2"]
-			if intswitch == False: 
-				CurrentPropDict["Property "+ str(d) + typedes]["Button Press"] = buttonpress
-				CurrentPropDict["Property "+ str(d) + typedes]["Conditionals"] = conditional
-				CurrentPropDict["Property "+ str(d) + typedes]["Conditionals"] = conditional
-				CurrentPropDict["Property "+ str(d) + typedes]["Additional Conditional"] = PropertyDictionary["propbyte3"]
-			else: 
-				CurrentPropDict["Property "+ str(d) + typedes]["Button Press (1)"] = PropertyDictionary["propbyte1"]
-				CurrentPropDict["Property "+ str(d) + typedes]["Button Press (2)"] = PropertyDictionary["propbyte2"]
-				CurrentPropDict["Property "+ str(d) + typedes]["Conditionals"] = PropertyDictionary["propbyte4"]
-				CurrentPropDict["Property "+ str(d) + typedes]["Additional Conditional"] = PropertyDictionary["propbyte3"]
+			CurrentPropDict["Property "+ str(d) + typedes]["Button Press"] = buttonpress
+			CurrentPropDict["Property "+ str(d) + typedes]["Conditionals"] = conditional
+			CurrentPropDict["Property "+ str(d) + typedes]["Additional Conditional"] = PropertyDictionary["propbyte3"]
 		else:
-			if intswitch == False:
-				buttonpressStrings = jsonfile["Button Press"]
-				bitslist = iterateStringstoBits(ButtonPressList, buttonpressStrings)
-				short1 = bitlistToInteger(bitslist)
-				byte3 = jsonfile["Additional Conditional"]
+			buttonpressStrings = jsonfile["Button Press"]
+			bitslist = iterateStringstoBits(ButtonPressList, buttonpressStrings)
+			short1 = bitlistToInteger(bitslist)
+			byte3 = jsonfile["Additional Conditional"]
 
-				conditionalsStrings = jsonfile["Conditionals"]
-				bitslist = iterateStringstoBits(Conditionals, conditionalsStrings)
-				byte4 = bitlistToInteger(bitslist)
-			else:
-				byte1 = jsonfile["Button Press (1)"]
-				byte2 = jsonfile["Button Press (2)"]
-				byte3 = jsonfile["Additional Conditional"]
-				byte1 = int_to_bytes(byte1)
-				byte2 = int_to_bytes(byte2)
-				short1 = int.from_bytes(byte1+byte2, "little")
-				byte4 = jsonfile["Conditionals"]
+			conditionalsStrings = jsonfile["Conditionals"]
+			bitslist = iterateStringstoBits(Conditionals, conditionalsStrings)
+			byte4 = bitlistToInteger(bitslist)
 			extracttype = "Short & 2 Bytes"
 			temparray.extend((extracttype,propertytype,short1,byte3,byte4))
 			
-	elif PropType == 3:
-		if extract == True:
-			CurrentPropDict["Property "+ str(d) + typedes]["Property Type"] = PropertyDictionary["propint2"]
-			CurrentPropDict["Property "+ str(d) + typedes]["Unk Byte 1"] = PropertyDictionary["propbyte1"]
-		else:
-			byte1 = jsonfile["Unk Byte 1"]
-			extracttype = "4 Bytes"
-			temparray.extend((extracttype,propertytype,byte1,0,0,0))
-			
-	elif PropType == 4:
+	elif PropType in [3,4]:
 		if extract == True:
 			CurrentPropDict["Property "+ str(d) + typedes]["Property Type"] = PropertyDictionary["propint2"]
 			CurrentPropDict["Property "+ str(d) + typedes]["Unk Byte 1"] = PropertyDictionary["propbyte1"]
@@ -374,26 +349,18 @@ def propertyExtraction(f, extract, d, CurrentPropDict, PropertyDictionary, Engin
 			ConditionalsBitmask = bitfield(PropertyDictionary["propbyte4"])
 			conditional = bitfieldListMask(ConditionalsBitmask, Conditionals)
 			CurrentPropDict["Property "+ str(d) + typedes]["Property Type"] = PropertyDictionary["propint2"]
-			if intswitch == False:
-				if PropertyDictionary["propbyte1"] in StateModifiersDict:
-					CurrentPropDict["Property "+ str(d) + typedes]["State Type"] = StateModifiersDict[PropertyDictionary["propbyte1"]]
-				else: CurrentPropDict["Property "+ str(d) + typedes]["State Type"] = "unk" + str(PropertyDictionary["propbyte1"])
-				CurrentPropDict["Property "+ str(d) + typedes]["Conditionals"] = conditional
-			else:
-				CurrentPropDict["Property "+ str(d) + typedes]["State Type"] = PropertyDictionary["propbyte1"]
-				CurrentPropDict["Property "+ str(d) + typedes]["Conditionals"] = PropertyDictionary["propbyte4"]
+			if PropertyDictionary["propbyte1"] in StateModifiersDict:
+				CurrentPropDict["Property "+ str(d) + typedes]["State Type"] = StateModifiersDict[PropertyDictionary["propbyte1"]]
+			else: CurrentPropDict["Property "+ str(d) + typedes]["State Type"] = "unk" + str(PropertyDictionary["propbyte1"])
+			CurrentPropDict["Property "+ str(d) + typedes]["Conditionals"] = conditional
 		else:
-			if intswitch == False: 
-				byte1 = jsonfile["State Type"]
-				tempdict = dict([(value, key) for key, value in StateModifiersDict.items()])
-				if byte1 in tempdict: byte1 = tempdict[byte1]
-				else: byte1 = int(byte1[3:])
-				conditionalsStrings = jsonfile["Conditionals"]
-				bitslist = iterateStringstoBits(Conditionals, conditionalsStrings)
-				byte4 = bitlistToInteger(bitslist)
-			else: 
-				byte1 = jsonfile["State Type"]
-				byte4 = jsonfile["Conditionals"]
+			byte1 = jsonfile["State Type"]
+			tempdict = dict([(value, key) for key, value in StateModifiersDict.items()])
+			if byte1 in tempdict: byte1 = tempdict[byte1]
+			else: byte1 = int(byte1[3:])
+			conditionalsStrings = jsonfile["Conditionals"]
+			bitslist = iterateStringstoBits(Conditionals, conditionalsStrings)
+			byte4 = bitlistToInteger(bitslist)
 			extracttype = "4 Bytes"
 			temparray.extend((extracttype,propertytype,byte1,0,0,byte4))
 			
@@ -419,22 +386,16 @@ def propertyExtraction(f, extract, d, CurrentPropDict, PropertyDictionary, Engin
 		if extract == True:
 			CurrentPropDict["Property "+ str(d) + typedes]["Property Type"] = PropertyDictionary["propint2"]
 			CurrentPropDict["Property "+ str(d) + typedes]["Weapon Category ID"] = PropertyDictionary["propshort1"]
-			if intswitch == False:
-				ConditionalsBitmask = bitfield(PropertyDictionary["propbyte4"])
-				conditional = bitfieldListMask(ConditionalsBitmask, Conditionals)
-				CurrentPropDict["Property "+ str(d) + typedes]["Bitmask Byte 1"] = PropertyDictionary["propbyte3"]
-				CurrentPropDict["Property "+ str(d) + typedes]["Bitmask Byte 2"] = conditional
-			else:
-				CurrentPropDict["Property "+ str(d) + typedes]["Bitmask Byte 1"] = PropertyDictionary["propbyte3"]
-				CurrentPropDict["Property "+ str(d) + typedes]["Bitmask Byte 2"] = PropertyDictionary["propbyte4"]
+			ConditionalsBitmask = bitfield(PropertyDictionary["propbyte4"])
+			conditional = bitfieldListMask(ConditionalsBitmask, Conditionals)
+			CurrentPropDict["Property "+ str(d) + typedes]["Bitmask Byte 1"] = PropertyDictionary["propbyte3"]
+			CurrentPropDict["Property "+ str(d) + typedes]["Bitmask Byte 2"] = conditional
 		else:
 			short1 = jsonfile["Weapon Category ID"]
-			byte3 = jsonfile["Bitmask Byte 1"]
-			if intswitch == False: 
-				conditionalsStrings = jsonfile["Bitmask Byte 2"]
-				bitslist = iterateStringstoBits(Conditionals, conditionalsStrings)
-				byte4 = bitlistToInteger(bitslist)
-			else: byte4 = jsonfile["Bitmask Byte 2"]
+			byte3 = jsonfile["Bitmask Byte 1"] 
+			conditionalsStrings = jsonfile["Bitmask Byte 2"]
+			bitslist = iterateStringstoBits(Conditionals, conditionalsStrings)
+			byte4 = bitlistToInteger(bitslist)
 			extracttype = "Short & 2 Bytes"
 			temparray.extend((extracttype, propertytype,short1,byte3,byte4))
 			
@@ -452,35 +413,41 @@ def propertyExtraction(f, extract, d, CurrentPropDict, PropertyDictionary, Engin
 	elif PropType == 15:
 		if extract == True:
 			CurrentPropDict["Property "+ str(d) + typedes]["Property Type"] = PropertyDictionary["propint2"]
-			if intswitch == False:
-				CurrentPropDict["Property "+ str(d) + typedes]["Target"] = TargetEntityDict[PropertyDictionary["propbyte1"]]
-				CurrentPropDict["Property "+ str(d) + typedes]["Unk Byte 2"] = PropertyDictionary["propbyte2"]
-				if PropertyDictionary["propbyte3"] in TargetConditional:
-					CurrentPropDict["Property "+ str(d) + typedes]["Target Position"] = TargetConditional[PropertyDictionary["propbyte3"]]
-				else: CurrentPropDict["Property "+ str(d) + typedes]["Target Position"] = "unk" + str(PropertyDictionary["propbyte3"])
-				CurrentPropDict["Property "+ str(d) + typedes]["Unk Byte 4"] = PropertyDictionary["propbyte4"]
-			else:
-				CurrentPropDict["Property "+ str(d) + typedes]["Target"] = PropertyDictionary["propbyte1"]
-				CurrentPropDict["Property "+ str(d) + typedes]["Unk Byte 2"] = PropertyDictionary["propbyte2"]
-				CurrentPropDict["Property "+ str(d) + typedes]["Target Position"] = PropertyDictionary["propbyte3"]
-				CurrentPropDict["Property "+ str(d) + typedes]["Unk Byte 4"] = PropertyDictionary["propbyte4"]
+			CurrentPropDict["Property "+ str(d) + typedes]["Target"] = TargetEntityDict[PropertyDictionary["propbyte1"]]
+			CurrentPropDict["Property "+ str(d) + typedes]["Unk Byte 2"] = PropertyDictionary["propbyte2"]
+			if PropertyDictionary["propbyte3"] in TargetConditional:
+				CurrentPropDict["Property "+ str(d) + typedes]["Target Position"] = TargetConditional[PropertyDictionary["propbyte3"]]
+			else: CurrentPropDict["Property "+ str(d) + typedes]["Target Position"] = "unk" + str(PropertyDictionary["propbyte3"])
+			CurrentPropDict["Property "+ str(d) + typedes]["Unk Byte 4"] = PropertyDictionary["propbyte4"]
 		else:
-			if intswitch == False:
-				byte1 = jsonfile["Target"]
-				tempdict = dict([(value, key) for key, value in TargetEntityDict.items()]) 
-				byte1 = tempdict[byte1]
-			else: byte1 = jsonfile["Target"]
+			byte1 = jsonfile["Target"]
+			tempdict = dict([(value, key) for key, value in TargetEntityDict.items()]) 
+			byte1 = tempdict[byte1]
 			byte2 = jsonfile["Unk Byte 2"]
-			if intswitch == False:
-				byte3 = jsonfile["Target Position"]
-				tempdict = dict([(value, key) for key, value in TargetConditional.items()]) 
-				if byte3 in tempdict: byte3 = tempdict[byte3]
-				else: byte3 = int(byte3[3:])
-			else: byte3 = jsonfile["Target Position"]
+			byte3 = jsonfile["Target Position"]
+			tempdict = dict([(value, key) for key, value in TargetConditional.items()]) 
+			if byte3 in tempdict: byte3 = tempdict[byte3]
+			else: byte3 = int(byte3[3:])
 			byte4 = jsonfile["Unk Byte 4"]
 			extracttype = "4 Bytes"
 			temparray.extend((extracttype, propertytype,byte1,byte2,byte3,byte4))
-			
+	elif PropType == 17:
+		if extract == True:
+			if EngineVersion == "Old Engine":
+				CurrentPropDict["Property "+ str(d) + typedes]["Property Type"] = PropertyDictionary["propint2"]
+				CurrentPropDict["Property "+ str(d) + typedes]["Weapon Name"] = GetStringFromPointer(f, PropertyDictionary["propint1"])
+			elif EngineVersion == "Dragon Engine":
+				CurrentPropDict["Property "+ str(d) + typedes]["Property Type"] = PropertyDictionary["propint2"]
+				CurrentPropDict["Property "+ str(d) + typedes]["Weapon ID"] = PropertyDictionary["propint1"]
+		else:
+			if EngineVersion == "Old Engine":
+				propstring = jsonfile["Weapon Name"]
+				extracttype = "Pointer"
+				temparray.extend((extracttype,propertytype, propstring))
+			elif EngineVersion == "Dragon Engine":
+				propint1 = jsonfile["Weapon ID"]
+				extracttype = "Integer"
+				temparray.extend((extracttype, propertytype,propint1))
 	elif PropType == 19:
 		if extract == True:
 			CurrentPropDict["Property "+ str(d) + typedes]["Property Type"] = PropertyDictionary["propint2"]
@@ -497,15 +464,11 @@ def propertyExtraction(f, extract, d, CurrentPropDict, PropertyDictionary, Engin
 	elif PropType == 22:
 		if extract == True:
 			CurrentPropDict["Property "+ str(d) + typedes]["Property Type"] = PropertyDictionary["propint2"]
-			if intswitch == False: CurrentPropDict["Property "+ str(d) + typedes]["Quickstep Direction"] = QuickstepDict[PropertyDictionary["propbyte1"]]
-			else: CurrentPropDict["Property "+ str(d) + typedes]["Quickstep Direction"] = PropertyDictionary["propbyte1"]
+			CurrentPropDict["Property "+ str(d) + typedes]["Quickstep Direction"] = QuickstepDict[PropertyDictionary["propbyte1"]]
 		else:
-			if intswitch == False:
-				byte1 = jsonfile["Quickstep Direction"]
-				tempdict = dict([(value, key) for key, value in QuickstepDict.items()]) 
-				byte1 = tempdict[byte1]
-			else:
-				byte1 = jsonfile["Quickstep Direction"]
+			byte1 = jsonfile["Quickstep Direction"]
+			tempdict = dict([(value, key) for key, value in QuickstepDict.items()]) 
+			byte1 = tempdict[byte1]
 			extracttype = "4 Bytes"
 			temparray.extend((extracttype, propertytype,byte1,0,0,0))
 			
@@ -524,6 +487,21 @@ def propertyExtraction(f, extract, d, CurrentPropDict, PropertyDictionary, Engin
 				extracttype = "Pointer"
 				temparray.extend((extracttype, propertytype, propertypointer))
 				
+	elif PropType == 24:
+		if extract == True:
+			CurrentPropDict["Property "+ str(d) + typedes]["Property Type"] = PropertyDictionary["propint2"]
+			if OEMod == 1: CurrentPropDict["Property "+ str(d) + typedes]["Item Name"] = GetStringFromPointer(f, PropertyDictionary["propint1"], "big")
+			else: CurrentPropDict["Property "+ str(d) + typedes]["Item ID"] = PropertyDictionary["propint1"]
+		else:
+			if OEMod == 0:
+				propint1 = jsonfile["Item ID"]
+				extracttype = "Integer"
+				temparray.extend((extracttype, propertytype,propint1))
+			else:
+				propertypointer = jsonfile["Item Name"]
+				extracttype = "Pointer"
+				temparray.extend((extracttype, propertytype, propertypointer))
+				
 	elif PropType == 26:
 		if extract == True:
 			CurrentPropDict["Property "+ str(d) + typedes]["Property Type"] = PropertyDictionary["propint2"]
@@ -532,6 +510,30 @@ def propertyExtraction(f, extract, d, CurrentPropDict, PropertyDictionary, Engin
 			propint1 = jsonfile["Timing"]
 			extracttype = "Integer"
 			temparray.extend((extracttype, propertytype,propint1))
+			
+	elif PropType == 37:
+		if extract == True:
+			CurrentPropDict["Property "+ str(d) + typedes]["Property Type"] = PropertyDictionary["propint2"]
+			if OEMod == 1: CurrentPropDict["Property "+ str(d) + typedes]["Motion Name"] = GetStringFromPointer(f, PropertyDictionary["propint1"], "big")
+			else: CurrentPropDict["Property "+ str(d) + typedes]["Motion ID"] = PropertyDictionary["propint1"]
+		else:
+			if OEMod == 0:
+				propint1 = jsonfile["Motion ID"]
+				extracttype = "Integer"
+				temparray.extend((extracttype, propertytype,propint1))
+			else:
+				propertypointer = jsonfile["Motion Name"]
+				extracttype = "Pointer"
+				temparray.extend((extracttype, propertytype, propertypointer))
+			
+	elif PropType == 31:
+		if extract == True:
+			CurrentPropDict["Property "+ str(d) + typedes]["Property Type"] = PropertyDictionary["propint2"]
+			CurrentPropDict["Property "+ str(d) + typedes]["String"] = GetStringFromPointer(f, PropertyDictionary["propint1"])
+		else:
+			propstring = jsonfile["String"]
+			extracttype = "Pointer"
+			temparray.extend((extracttype,propertytype, propstring))
 			
 	elif PropType == 34:
 		if extract == True:
@@ -719,7 +721,6 @@ CommandSetOrderIDx = 0
 parser = argparse.ArgumentParser(description="Fighter_cfc extraction tool")
 parser.add_argument("file", help=".cfc file")
 parser.add_argument("-sn", "--simplenames", help="Shorten property names to not include the type of property", action="store_true")
-parser.add_argument("-int", "--integers", help="Replaces all enums for their raw Integer value", action="store_true")
 args = parser.parse_args()
 kfile = args.file
 filecheck = os.path.isfile(kfile)
@@ -894,10 +895,8 @@ if filecheck == True:
 						else: 
 							if PropertyDictionary["propint2"] in PropertyTypeDictDE:
 								typedes = "| Type " + str(PropertyDictionary["propint2"]) + " = " + PropertyTypeDictDE[PropertyDictionary["propint2"]]
-							else: typedes = ""
-						if args.integers: intswitch = True
-						else: intswitch = False					
-						propertyExtraction(f, True, d, CommandSetDictionary[(setname)]["Target Table"]["Target " + str(c)]["Target Properties"], PropertyDictionary, VersionDictionaryHact[fileversion], fileversion, typedes,intswitch, OrderedDict(), ButtonPressListDE, talkparamfile)
+							else: typedes = ""			
+						propertyExtraction(f, True, d, CommandSetDictionary[(setname)]["Target Table"]["Target " + str(c)]["Target Properties"], PropertyDictionary, VersionDictionaryHact[fileversion], fileversion, typedes, OrderedDict(), ButtonPressListDE, talkparamfile)
 						f.seek(nextproperty)
 						d = d + 1
 					c = c + 1
@@ -1021,10 +1020,8 @@ if filecheck == True:
 						else: 
 							if PropertyDictionary["propint2"] in PropertyTypeDictOE:
 								typedes = "| Type " + str(PropertyDictionary["propint2"]) + " = " + PropertyTypeDictOE[PropertyDictionary["propint2"]]
-							else: typedes = ""
-						if args.integers: intswitch = True
-						else: intswitch = False					
-						propertyExtraction(f, True, d, CommandSetDictionary[(setname)]["Target Table"]["Target " + str(c)]["Target Properties"], PropertyDictionary, VersionDictionaryHact[fileversion], fileversion, typedes,intswitch, OrderedDict(), ButtonPressListOE, [])
+							else: typedes = ""			
+						propertyExtraction(f, True, d, CommandSetDictionary[(setname)]["Target Table"]["Target " + str(c)]["Target Properties"], PropertyDictionary, VersionDictionaryHact[fileversion], fileversion, typedes, OrderedDict(), ButtonPressListOE, [])
 						f.seek(nextproperty)
 						d = d + 1
 					c = c + 1
@@ -1230,9 +1227,7 @@ if filecheck == True:
 									typedes = "| Type " + str(PropertyDictionary["propint2"]) + " = " + PropertyTypeDictOE[PropertyDictionary["propint2"]]
 								else: typedes = ""
 								
-							if args.integers: intswitch = True
-							else: intswitch = False
-							propertyExtraction(f, True, d, CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"], PropertyDictionary, VersionDictionary[fileversion], fileversion, typedes, intswitch, OrderedDict(), ButtonPressListOE)
+							propertyExtraction(f, True, d, CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"], PropertyDictionary, VersionDictionary[fileversion], fileversion, typedes, OrderedDict(), ButtonPressListOE)
 							f.seek(nextproperty)
 							d = d + 1
 						c = c + 1
@@ -1330,10 +1325,8 @@ if filecheck == True:
 								typedes = "| Type " + str(PropertyDictionary["propint2"]) + " = " + PropertyTypeDictOE[PropertyDictionary["propint2"]]
 							else: typedes = ""
 							
-						if args.integers: intswitch = True
-						else: intswitch = False
 
-						propertyExtraction(f, True, c, CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"], PropertyDictionary, VersionDictionary[fileversion], fileversion, typedes, intswitch, OrderedDict, ButtonPressListOE)
+						propertyExtraction(f, True, c, CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"], PropertyDictionary, VersionDictionary[fileversion], fileversion, typedes, OrderedDict, ButtonPressListOE)
 						c = c + 1
 						f.seek(nextweppos)
 					f.seek(nextwepset)
@@ -1544,10 +1537,8 @@ if filecheck == True:
 								if PropertyDictionary["propint2"] in PropertyTypeDictDE:
 									typedes = "| Type " + str(PropertyDictionary["propint2"]) + " = " + PropertyTypeDictDE[PropertyDictionary["propint2"]]
 								else: typedes = ""
-
-							if args.integers: intswitch = True
-							else: intswitch = False								
-							propertyExtraction(f, True, d, CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"], PropertyDictionary, VersionDictionary[fileversion], fileversion, typedes, intswitch, OrderedDict())
+							
+							propertyExtraction(f, True, d, CommandSetDictionary[(setname)]["Move Table"][movename]["Follow Up Table"]["Follow Up " + str(c)]["Follows Up Properties"], PropertyDictionary, VersionDictionary[fileversion], fileversion, typedes, OrderedDict())
 							f.seek(nextproperty)
 							d = d + 1
 						c = c + 1
@@ -1649,10 +1640,8 @@ if filecheck == True:
 								typedes = "| Type " + str(PropertyDictionary["propint2"]) + " = " + PropertyTypeDictDE[PropertyDictionary["propint2"]]
 							else: typedes = ""
 							
-						if args.integers: intswitch = True
-						else: intswitch = False
 						
-						propertyExtraction(f, True, c, CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"], PropertyDictionary, VersionDictionary[fileversion], fileversion, typedes, intswitch, OrderedDict, ButtonPressListDE)
+						propertyExtraction(f, True, c, CommandSetDictionary[(setname)]["Weapon Moveset Table"]["Weapon Moveset " + str(b)]["Weapon Moveset Properties"], PropertyDictionary, VersionDictionary[fileversion], fileversion, typedes, OrderedDict, ButtonPressListDE)
 						c = c + 1
 						f.seek(nextweppos)
 					f.seek(nextwepset)
@@ -1738,8 +1727,8 @@ else:
 							if "Target Properties" in jsonfile[commandsetname]["Target Table"][target]:
 								for property in list(jsonfile[commandsetname]["Target Table"][target]["Target Properties"].keys()):
 									propertytype = jsonfile[commandsetname]["Target Table"][target]["Target Properties"][property]["Property Type"]
-									if propertytype == 48:
-										string = jsonfile[commandsetname]["Target Table"][target]["Target Properties"][property]["Hact (Property)"]
+									if propertytype in [31,48]:
+										string = list(jsonfile[commandsetname]["Target Table"][target]["Target Properties"][property].keys())[1]
 										stringlistEntryAdd(string, stringlist)
 					CommandSetOrderIDx = CommandSetOrderIDx + 1
 			stringlist = list( dict.fromkeys(stringlist) )
@@ -1809,7 +1798,7 @@ else:
 							if "Target Properties" in jsonfile[commandsetname]["Target Table"][target]:
 								for property in list(jsonfile[commandsetname]["Target Table"][target]["Target Properties"].keys()):
 									temparray2 = []
-									temparray2.append(propertyExtraction(f, False, 0, [], [], VersionDictionaryHact[fileversion], fileversion, "", args.integers, jsonfile[commandsetname]["Target Table"][target]["Target Properties"][property], ButtonPressListDE))
+									temparray2.append(propertyExtraction(f, False, 0, [], [], VersionDictionaryHact[fileversion], fileversion, "", jsonfile[commandsetname]["Target Table"][target]["Target Properties"][property], ButtonPressListDE))
 									TargetPropValues.append(temparray2)
 								
 							x = 0
@@ -1923,11 +1912,8 @@ else:
 							if "Target Properties" in jsonfile[commandsetname]["Target Table"][target]:
 								for property in list(jsonfile[commandsetname]["Target Table"][target]["Target Properties"].keys()):
 									propertytype = jsonfile[commandsetname]["Target Table"][target]["Target Properties"][property]["Property Type"]
-									if propertytype == 47:
-										string = jsonfile[commandsetname]["Target Table"][target]["Target Properties"][property]["Hact (Property)"]
-										stringlistEntryAdd(string, stringlist)
-									elif propertytype == 22:
-										string = jsonfile[commandsetname]["Target Table"][target]["Target Properties"][property]["Skill Name"]
+									if propertytype in [16,22,23,30,36,47]:
+										string = list(jsonfile[commandsetname]["Target Table"][target]["Target Properties"][property].values())[1]
 										stringlistEntryAdd(string, stringlist)
 					CommandSetOrderIDx = CommandSetOrderIDx + 1
 			stringlist = list( dict.fromkeys(stringlist) )
@@ -1948,6 +1934,7 @@ else:
 				alignbyte = b'\x00'
 			else: alignbyte = b'\xCC'
 			aligntext(newfile, alignbyte)#Adds the CC Byte enders to the end of the string table.
+			if b'\x00' in stringpointerdict: stringpointerdict["Null"] = stringpointerdict[b'\x00']
 			
 			#Parsing data from the jsons into hact begins here.
 			CommandSetPointerList = []
@@ -2007,7 +1994,7 @@ else:
 							if "Target Properties" in jsonfile[commandsetname]["Target Table"][target]:
 								for property in list(jsonfile[commandsetname]["Target Table"][target]["Target Properties"].keys()):
 									temparray2 = []
-									temparray2.append(propertyExtraction(f, False, 0, [], [], VersionDictionaryHact[fileversion], fileversion, "", args.integers, jsonfile[commandsetname]["Target Table"][target]["Target Properties"][property], ButtonPressListOE))
+									temparray2.append(propertyExtraction(f, False, 0, [], [], VersionDictionaryHact[fileversion], fileversion, "", jsonfile[commandsetname]["Target Table"][target]["Target Properties"][property], ButtonPressListOE))
 									TargetPropValues.append(temparray2)
 								
 							x = 0
@@ -2096,7 +2083,7 @@ else:
 					jsonfile = json.load(file)
 					fileversion = jsonfile["File Version"]
 					commandsetname = list(jsonfile.keys())[2]
-					stringlist.append(commandsetname)
+					stringlistEntryAdd(commandsetname, stringlist)
 			for f in os.listdir(kfile):#Loops through all Json files and collects string data
 				curfile = workdir + "\\" + f
 				print(f)
@@ -2108,26 +2095,25 @@ else:
 					#commandsetID = jsonfile[commandsetname]["Command Set ID"]
 					for move in list(jsonfile[commandsetname]["Move Table"].keys()):
 						movename = move
-						stringlist.append(movename)
+						stringlistEntryAdd(movename, stringlist)
 						if "Animation Used" in jsonfile[commandsetname]["Move Table"][movename]:
 							animvalue = jsonfile[commandsetname]["Move Table"][movename]["Animation Used"]
-							if animvalue == "Null":
-								animvalue = b'\x00'
-							stringlist.append(animvalue)
+							stringlistEntryAdd(animvalue, stringlist)
 						if "Animation Table" in jsonfile[commandsetname]["Move Table"][movename]:
 							for animtables in list(jsonfile[commandsetname]["Move Table"][movename]["Animation Table"].keys()):
 								animvalue = jsonfile[commandsetname]["Move Table"][movename]["Animation Table"][animtables]["Animation Used"]
-								if animvalue == "Null":
-									animvalue = b'\x00'
-								stringlist.append(animvalue)
+								stringlistEntryAdd(animvalue, stringlist)
 						if "Follow Up Table" in jsonfile[commandsetname]["Move Table"][movename]:
 							for followuptable in list(jsonfile[commandsetname]["Move Table"][movename]["Follow Up Table"].keys()):
 								if "Follows Up Properties" in jsonfile[commandsetname]["Move Table"][movename]["Follow Up Table"][followuptable]:
 									for followupprop in list(jsonfile[commandsetname]["Move Table"][movename]["Follow Up Table"][followuptable]["Follows Up Properties"].keys()):
 										propertytype = jsonfile[commandsetname]["Move Table"][movename]["Follow Up Table"][followuptable]["Follows Up Properties"][followupprop]["Property Type"]
-										if propertytype == 11 and fileversion == 16:
+										if propertytype in [31]:
+											string = list(jsonfile[commandsetname]["Move Table"][movename]["Follow Up Table"][followuptable]["Follows Up Properties"][followupprop].values())[1]
+											stringlistEntryAdd(string, stringlist)
+										elif propertytype == 11 and fileversion == 16:
 											heataction = jsonfile[commandsetname]["Move Table"][movename]["Follow Up Table"][followuptable]["Follows Up Properties"][followupprop]["Hact Name"]
-											stringlist.append(heataction)
+											stringlistEntryAdd(heataction, stringlist)
 					if DEGame == 0:
 						if "Weapon Moveset Table" in jsonfile[commandsetname]:
 							for weaponset in list(jsonfile[commandsetname]["Weapon Moveset Table"].keys()):
@@ -2205,7 +2191,7 @@ else:
 									temparray2 = []
 									for followupprop in list(jsonfile[commandsetname]["Move Table"][movename]["Follow Up Table"][followuptable]["Follows Up Properties"].keys()):
 										#list(jsonfile.keys())[1]
-										temparray2.append(propertyExtraction(f, False, 0, [], [], VersionDictionary[fileversion], fileversion, "", args.integers, jsonfile[commandsetname]["Move Table"][movename]["Follow Up Table"][followuptable]["Follows Up Properties"][followupprop], ButtonPressListDE))
+										temparray2.append(propertyExtraction(f, False, 0, [], [], VersionDictionary[fileversion], fileversion, "", jsonfile[commandsetname]["Move Table"][movename]["Follow Up Table"][followuptable]["Follows Up Properties"][followupprop], ButtonPressListDE))
 									FollowUpPropValues.append(temparray2)
 								else:
 									FollowUpPropValues.append([])
@@ -2390,7 +2376,7 @@ else:
 							elif DEGame == 1: WeaponCommand = jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Command Set ID for Weapon Moveset"]
 							for weaponprops in list(jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"].keys()):
 								temparray3 = []
-								temparray3.append(propertyExtraction(f, False, 0, [], [], VersionDictionary[fileversion], fileversion, "", args.integers, jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"][weaponprops], ButtonPressListDE))
+								temparray3.append(propertyExtraction(f, False, 0, [], [], VersionDictionary[fileversion], fileversion, "", jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"][weaponprops], ButtonPressListDE))
 								WeaponPropertyArray.append(temparray3)
 							x = 0
 							while x < numwepprops:
@@ -2522,26 +2508,20 @@ else:
 									if "Follows Up Properties" in jsonfile[commandsetname]["Move Table"][movename]["Follow Up Table"][followuptable]:
 										for followupprop in list(jsonfile[commandsetname]["Move Table"][movename]["Follow Up Table"][followuptable]["Follows Up Properties"].keys()):
 											propertytype = jsonfile[commandsetname]["Move Table"][movename]["Follow Up Table"][followuptable]["Follows Up Properties"][followupprop]["Property Type"]
-											if propertytype == 10:
-												heataction = jsonfile[commandsetname]["Move Table"][movename]["Follow Up Table"][followuptable]["Follows Up Properties"][followupprop]["Hact Name"]
-												stringlist.append(heataction)
-											if propertytype == 22:
-												propertypointer = jsonfile[commandsetname]["Move Table"][movename]["Follow Up Table"][followuptable]["Follows Up Properties"][followupprop]["Skill Name"]
-												stringlist.append(propertypointer)
+											if propertytype in [10,16,22,23,30,36,47]:
+												string = list(jsonfile[commandsetname]["Move Table"][movename]["Follow Up Table"][followuptable]["Follows Up Properties"][followupprop].values())[1]
+												stringlistEntryAdd(string, stringlist)
 					if "Weapon Moveset Table" in jsonfile[commandsetname]:
 						for weaponset in list(jsonfile[commandsetname]["Weapon Moveset Table"].keys()):
 							WeaponCommand = jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Command Set Name for Weapon Moveset"]
-							if WeaponCommand == b'\x00':
-								WeaponCommand = "Null"
+							if WeaponCommand == "Null":
+								WeaponCommand = b'\x00'
 							stringlist.append(WeaponCommand)
 							for weaponprops in list(jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"].keys()):
 								propertytype = jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"][weaponprops]["Property Type"]
-								if propertytype == 10:
-									heataction = jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"][weaponprops]["Hact Name"]
-									stringlist.append(heataction)
-								if propertytype == 22:
-									propertypointer = jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"][weaponprops]["Skill Name"]
-									stringlist.append(propertypointer)
+								if propertytype in [10,16,22,23,30,36,47]:
+									string = list(jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"][weaponprops].values())[1]
+									stringlistEntryAdd(string, stringlist)
 			stringlist = list( dict.fromkeys(stringlist) )
 			x = 0
 			
@@ -2615,7 +2595,7 @@ else:
 									if "Follows Up Properties" in jsonfile[commandsetname]["Move Table"][movename]["Follow Up Table"][followuptable]:
 										temparray2 = []
 										for followupprop in list(jsonfile[commandsetname]["Move Table"][movename]["Follow Up Table"][followuptable]["Follows Up Properties"].keys()):
-											temparray2.append(propertyExtraction(f, False, 0, [], [], VersionDictionary[fileversion], fileversion, "", args.integers, jsonfile[commandsetname]["Move Table"][movename]["Follow Up Table"][followuptable]["Follows Up Properties"][followupprop], ButtonPressListOE))
+											temparray2.append(propertyExtraction(f, False, 0, [], [], VersionDictionary[fileversion], fileversion, "", jsonfile[commandsetname]["Move Table"][movename]["Follow Up Table"][followuptable]["Follows Up Properties"][followupprop], ButtonPressListOE))
 										FollowUpPropValues.append(temparray2)
 									else:
 										FollowUpPropValues.append([])
@@ -2762,7 +2742,7 @@ else:
 								WeaponCommand = b'\x00'
 							for weaponprops in list(jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"].keys()):
 								temparray3 = []								
-								temparray3.append(propertyExtraction(f, False, 0, [], [], VersionDictionary[fileversion], fileversion, "", args.integers, jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"][weaponprops], ButtonPressListOE))
+								temparray3.append(propertyExtraction(f, False, 0, [], [], VersionDictionary[fileversion], fileversion, "", jsonfile[commandsetname]["Weapon Moveset Table"][weaponset]["Weapon Moveset Properties"][weaponprops], ButtonPressListOE))
 								WeaponPropertyArray.append(temparray3)
 							x = 0
 							while x < numwepprops:
