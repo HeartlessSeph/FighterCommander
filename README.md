@@ -25,6 +25,14 @@ The tool currently supports:
 
 • Judgment (Hact.chp can be extracted but repacking is currently not supported)
 
+• Yakuza: Like a Dragon (Hact.chp can be extracted but repacking is currently not supported)
+
+• Lost Judgment (Hact.chp can be extracted but repacking is currently not supported)
+
+• Judgment (Hact.chp can be extracted but repacking is currently not supported)
+
+• Like a Dragon Gaiden: The Man Who Erased His Name (Hact.chp can be extracted but repacking is currently not supported)
+
 
 
 **USAGE:**
@@ -56,3 +64,5 @@ Massive thanks to Capitan Retraso for his Fighter Command notes and for helping 
 Also a massive thanks to ChuckP, who has done a lot of documentation for follow up property types.
 
 Thank you to Draxx182 for documenting Hact.chp for all of the Old Engine games. Support for those files likely would not have been added otherwise.
+
+Jhrino for providing all follow up property names.
