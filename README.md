@@ -1,11 +1,10 @@
-# Fighter Commander
-
-UPDATE:
+# UPDATE:
 
 An overhaul of Fighter Commander's code was done to make updating some stuff easier. This began as me attempting to make the code super clean and eventually spiraled out of control. It's still 1000 times better than what I was dealing with before.
 
 This is an early release as I'm experiencing some burnout. Hact.chp repacking support is not yet supported for any games. Use the prior version if you want to edit hact.chp for earlier games.
 
+# Fighter Commander
 
 A work in progress Fighter Command.cfc & Hact.chp extractor and repacker for Yakuza games.
 
