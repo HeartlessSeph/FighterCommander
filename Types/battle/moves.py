@@ -185,11 +185,6 @@ class generic_prop:
                     move_dict["Animation Table"][anim_idx]["Motion ID"] = buffer.read_uint32()
         return move_dict
 
-    @staticmethod
-    def parse_json_data(mjson, game):
-        a_bool = "Animation Table" in mjson
-        if "Animation Used" in mjson:
-            name = check_null(mjson["Animation Used"])
 
     @staticmethod
     def idx_to_name(mdict, idx_list):

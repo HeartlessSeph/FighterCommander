@@ -530,7 +530,7 @@ class HaveItem(generic_prop):
     @staticmethod
     def parse_strings(prop_dict, game):
         if game.engine == com.GameEngine.OE:
-            com.string_dict[prop_dict["Item Name"]] = 0
+            com.string_dict[prop_dict["Item ID"]] = 0
 
 
 class AttackFrame(generic_prop):
@@ -591,7 +591,7 @@ class MotionID(generic_prop):
     @staticmethod
     def parse_strings(prop_dict, game):
         if game.engine == com.GameEngine.OE:
-            com.string_dict[prop_dict["Motion Name"]] = 0
+            com.string_dict[prop_dict["Motion ID"]] = 0
 
 
 class Custom(generic_prop):
@@ -644,7 +644,7 @@ class GearLevel(generic_prop):
     def read_property(buffer1, buffer2, game):
         buffer1.seek(0)
         prop_dict = {}
-        prop_dict["Gear Level"] = buffer1.read_uint8() + 1
+        prop_dict["Gear Level"] = buffer1.read_uint8()
         return prop_dict
 
 

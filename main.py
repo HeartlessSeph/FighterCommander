@@ -1,5 +1,5 @@
-from Structure.CFC import CFC
-from Structure.CHP import CHP
+from Structure.CFC.File import cfcFile
+from Structure.CHP.File import chpFile
 from binary_reader import Whence, Endian
 from Utilities.bin_reader import BinaryReader
 from Utilities.util import *
@@ -15,7 +15,7 @@ def unpack_cfc(args, reader):
     cfc_game.set_game(args.game)
     reader.set_engine(cfc_game.engine)
 
-    cfc_file = CFC()
+    cfc_file = cfcFile()
     cfc_file.set_game(cfc_game)
     cfc_file.set_name(args.path.stem)
     cfc_file.read_file(reader)
@@ -49,7 +49,7 @@ def unpack_cfc(args, reader):
 
 def repack_cfc():
     # TODO: Clean this code up, it's a mess
-    cfc_file = CFC()
+    cfc_file = cfcFile()
     cfc_file.set_game(game)
     cfc_file.header.set_version(file_info_dict["File Version"])
     cfc_file.header.write_header(writer)
@@ -224,7 +224,7 @@ def unpack_chp(args, reader):
     com.cur_game = chp_game
     reader.set_engine(chp_game.engine)
 
-    chp_file = CHP()
+    chp_file = chpFile()
     chp_file.set_game(chp_game)
     chp_file.set_name(args.path.stem)
     chp_file.read_file(reader)
@@ -256,13 +256,98 @@ def unpack_chp(args, reader):
 
 
 def repack_chp(args, file_info_dict):
-    chp_file = CHP()
+    chp_file = chpFile()
     chp_file.set_game(game)
     chp_file.header.set_version(file_info_dict["File Version"])
     chp_file.header.write_header(writer)
     chp_file.hact_set_table.parse_jsons(com.file_jsons, game)
-    com.write_string_table(writer, com.string_dict)
+    com.write_string_table(writer, com.string_dict, b'\xCC', 4 * game.engine)
 
+    hact_set_pointers = []
+    # Write data
+    for hset in chp_file.hact_set_table.hact_sets:
+        print(hset.name)
+        target_pointers = []
+        for htarget in hset.targets:
+            condition_offsets = []
+            for cprop in htarget.properties:
+                cprop.cmd_trigger.write_to_buffer()
+                cur_buffer = cprop.cmd_trigger.Prop_Buffer
+                cur_bytes = cur_buffer.read_bytes(cur_buffer.size())
+                if game.engine == com.GameEngine.OE: cur_bytes = cur_bytes[::-1]
+                condition_offsets.append(writer.pos())
+                writer.write_bytes(cur_bytes)  # Writes props
+
+            condition_offsets_pointer = writer.pos()
+            for mpointer in condition_offsets: writer.write_uint_var(mpointer)
+            target_pointers.append(writer.pos())
+            writer.write_uint_var(com.string_dict[htarget.name])
+            if game.engine == com.GameEngine.DE:
+                writer.write_uint_var(condition_offsets_pointer)
+                writer.write_uint32(htarget.type)
+                writer.write_uint32(htarget.end_motion_id)
+                writer.write_uint32(len(condition_offsets))
+                writer.write_uint32(htarget.modify_flag)
+            else:
+                writer.write_uint32(htarget.type)
+                writer.write_uint32(com.string_dict[htarget.end_motion_id])
+                writer.write_uint32(len(condition_offsets))
+                writer.write_uint32(condition_offsets_pointer)
+                writer.write_uint32(htarget.modify_flag)
+        target_table_offset = writer.pos()
+        for target_pointer in target_pointers:
+            writer.write_uint_var(target_pointer)
+        hact_set_pointers.append(writer.pos())
+        if game.type == com.CFC_GROUPS.DE_CUR:
+            writer.write_uint32(hset.id)
+            writer.write_uint32(hset.sub)
+        else:
+            writer.write_uint_var(com.string_dict[hset.name])
+        if game.engine == com.GameEngine.DE:
+            writer.write_uint_var(target_table_offset)
+            if game.type == com.CFC_GROUPS.DE_CUR:
+                writer.write_uint_var(com.string_dict[hset.special_effect])
+                writer.write_uint32(hset.comp_flag)
+                writer.write_uint32(len(target_pointers))
+                writer.write_uint32(hset.play_area_type)
+            else:
+                if game.type in [com.CFC_GROUPS.DE_DEMO, com.CFC_GROUPS.DE_Y6]:
+                    writer.write_uint_var(com.string_dict[hset.id])
+                else:
+                    writer.write_uint32(hset.play_area_type)
+                    writer.write_uint32(hset.id)
+                writer.write_uint_var(com.string_dict[hset.comp_flag])
+                writer.write_uint32(len(target_pointers))
+
+            writer.write_float(hset.x)
+            writer.write_float(hset.y)
+            writer.write_float(hset.z)
+            writer.write_float(hset.rot)
+
+            if game.type != com.CFC_GROUPS.DE_CUR:
+                writer.write_float(hset.unk_target_val)
+                writer.write_uint32(com.string_dict[hset.hact_base])
+            writer.write_uint32(0)
+        else:
+            writer.write_uint32(len(target_pointers))
+            writer.write_uint32(target_table_offset)
+            writer.write_uint32(hset.unk_target_val)
+            writer.write_uint32(com.string_dict[hset.comp_flag])
+            writer.write_float(hset.x)
+            writer.write_float(hset.y)
+            writer.write_float(hset.z)
+            if game.type != com.CFC_GROUPS.OE_Y5:
+                writer.write_uint32(com.string_dict[hset.condition])
+                writer.write_uint32(hset.unk_int_3)
+                writer.write_uint32(hset.unk_int_4)
+                writer.write_uint32(0)  # Unk Int 5
+    hact_table_offset = writer.pos()
+    for hact_set_pointer in hact_set_pointers:
+        writer.write_uint_var(hact_set_pointer)
+    writer.write_uint_var(len(hact_set_pointers))
+    writer.write_uint_var(hact_table_offset)
+    writer.seek(0xC)
+    writer.write_uint32(writer.size())
 
     if args.output_name:
         out_name = args.output_name
@@ -272,7 +357,6 @@ def repack_chp(args, file_info_dict):
     file_name = str(args.path.parent) + f"/{out_name}.chp"
     with open(file_name, 'wb') as f:
         f.write(writer.buffer())
-
 
 
 # Main file begins starting from here below
@@ -326,7 +410,7 @@ try:
             cur_json = import_json(args.path / json_directory, file_name)
             com.file_jsons[file_name] = cur_json
         if file_extension == ".chp":
-            raise Exception("CHP repacking not yet implemented")
+            repack_chp(args, file_info_dict)
         elif file_extension == ".cfc":
             repack_cfc()
 
