@@ -181,7 +181,7 @@ class generic_prop:
                 move_dict["Animation Table"][anim_idx]["Animation Used"] = com.string_dict[anim_offset]
                 for idx, byte_val in enumerate(byte_vals):
                     move_dict["Animation Table"][anim_idx]["Unknown Byte " + str(idx + 1)] = int(byte_val)
-                if game.engine == com.GameEngine.DE:
+                if game.engine == com.GameEngine.DE and len(com.motion_gmt) == 0:
                     move_dict["Animation Table"][anim_idx]["Motion ID"] = buffer.read_uint32()
         return move_dict
 

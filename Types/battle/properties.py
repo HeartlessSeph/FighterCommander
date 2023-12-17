@@ -698,10 +698,10 @@ class HAct(generic_prop):
             hact_id = prop_dict["HAct ID"]
             if str(hact_id).isdigit():
                 hact_id = (unk_data << 24) + hact_id
-            elif len(com.motion_gmt) != 0:
+            elif len(com.talk_param) != 0:
                 hact_id = (unk_data << 24) + com.talk_param[hact_id]
             else:
-                raise Exception(f"No motion_json supplied for {hact_id}. Please re-run with -gmt option.")
+                raise Exception(f"No talk_param supplied for {hact_id}. Please re-run with -chp option.")
             buffer.write_uint32(hact_id)
         if game.engine == com.GameEngine.DE: buffer.write_uint32(0)
         return buffer
