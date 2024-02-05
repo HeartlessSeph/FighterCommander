@@ -237,29 +237,6 @@ class ButtonRenda(ButtonPush):
     pass
 
 
-class MotionShift(generic_prop):
-    @staticmethod
-    def write_property(prop_dict, game):
-        buffer = BinaryReader()
-        buffer.set_engine(game.engine)
-        buffer.write_uint8(prop_dict["Unk Byte 1"])
-        buffer.write_uint16(0)
-        buffer.write_uint8(0)
-        if game.engine == com.GameEngine.DE: buffer.write_uint32(0)
-        return buffer
-
-    @staticmethod
-    def read_property(buffer1, buffer2, game):
-        buffer1.seek(0)
-        prop_dict = {}
-        prop_dict["Unk Byte 1"] = buffer1.read_uint8()
-        return prop_dict
-
-
-class MotionEnd(MotionShift):
-    pass
-
-
 class FighterStatus(generic_prop):
     @staticmethod
     def write_property(prop_dict, game):
@@ -312,8 +289,6 @@ class Weapon(generic_prop):
         weapon_category = buffer1.read_uint16()
         bitmask = buffer1.read_uint8()
         conditional = buffer1.read_uint8()
-        # ConditionalsBitmask = bitfield(bitmask2)
-        # conditional = bitfieldListMask(ConditionalsBitmask, Conditionals)
 
         prop_dict["Weapon Category ID"] = weapon_category
         prop_dict["Bitmask Byte"] = bitmask
@@ -323,30 +298,6 @@ class Weapon(generic_prop):
 
 class Pickup(Weapon):
     pass
-
-
-class AttackHit(MotionShift):
-    # TODO: Find out the actual structure of this property
-    pass
-
-
-class Lever(generic_prop):
-    @staticmethod
-    def write_property(prop_dict, game):
-        buffer = BinaryReader()
-        buffer.set_engine(game.engine)
-        buffer.write_uint16(0)
-        buffer.write_uint8(0)
-        buffer.write_uint8(prop_dict["Unk Byte 4"])
-        if game.engine == com.GameEngine.DE: buffer.write_uint32(0)
-        return buffer
-
-    @staticmethod
-    def read_property(buffer1, buffer2, game):
-        buffer1.seek(3)
-        prop_dict = {}
-        prop_dict["Unk Byte 4"] = buffer1.read_uint8()
-        return prop_dict
 
 
 class DistLimit(generic_prop):

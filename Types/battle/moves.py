@@ -213,7 +213,11 @@ class Change(generic_prop):
         buffer.write_uint32(a_val)
         if game.engine == com.GameEngine.DE:
             if game.type not in [com.CFC_GROUPS.DE_DEMO, com.CFC_GROUPS.DE_Y6] and command_set != 65535:
-                buffer.write_uint32(com.set_id_order[command_set])
+                if command_set in com.set_id_order:
+                    buffer.write_uint32(com.set_id_order[command_set])
+                else:
+                    print_warning(f"{command_set} ID is not in this cfc. This command set may crash if this move is used.")
+                    buffer.write_uint32(0)
             else:
                 buffer.write_uint32(0)
         return buffer

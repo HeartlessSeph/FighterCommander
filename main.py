@@ -42,14 +42,16 @@ def unpack_cfc(args, reader):
 
     for idx, cfc_json in enumerate(cfc_file.command_set_table.cfc_jsons):
         cur_name = cfc_file.command_set_table.command_sets[idx].name
-        export_json(out_folder / "Extracted", cur_name, cfc_json)
+        export_json(out_folder / "Extracted", cur_name, cfc_json, args.yaml)
 
     export_json(out_folder, "File Information", info_dict)
+    if args.strings: export_json(out_folder, "Strings", com.string_dict)
 
 
 def repack_cfc():
     # TODO: Clean this code up, it's a mess
     cfc_file = cfcFile()
+    if args.strings: com.string_dict = {value: int(key) for key, value in import_json(args.path, "Strings").items()}
     cfc_file.set_game(game)
     cfc_file.header.set_version(file_info_dict["File Version"])
     cfc_file.header.write_header(writer)
@@ -60,7 +62,7 @@ def repack_cfc():
     command_set_pointers = []
     # Write data
     for cset in cfc_file.command_set_table.command_sets:
-        print(cset.name)
+        print(f"Writing {cset.name} to CFC")
         move_pointers = []
         for cmove in cset.moves:
             fol_pointers = []
@@ -100,13 +102,10 @@ def repack_cfc():
             else:
                 anim_val = cmove_buffer.read_uint_var()
 
-            move_follow_up_offsets_pointer = writer.pos()
-            for fol_pointer in fol_pointers:
-                writer.write_uint_var(fol_pointer)
-
             anim_tables_pointer = writer.pos()
             for anim_table_pointer in anim_table_offsets:
                 writer.write_uint_var(anim_table_pointer)
+
             if len(anim_table_offsets) > 0:
                 anim_val = writer.pos()
                 if game.engine == com.GameEngine.DE: writer.write_uint_var(anim_tables_pointer)
@@ -118,6 +117,10 @@ def repack_cfc():
                 if game.engine == com.GameEngine.OE: writer.write_uint_var(anim_tables_pointer)
                 if game.engine == com.GameEngine.DE: writer.write_uint32(0)
 
+            move_follow_up_offsets_pointer = writer.pos()
+            for fol_pointer in fol_pointers:
+                writer.write_uint_var(fol_pointer)
+
             add_prop_offsets_pointer = writer.pos()
             for add_prop_pointer in add_prop_pointers:
                 writer.write_uint_var(add_prop_pointer)
@@ -126,7 +129,10 @@ def repack_cfc():
             writer.write_uint_var(com.string_dict[cmove.name])
             if game.engine == com.GameEngine.DE:
                 writer.write_uint_var(anim_val)
-                writer.write_uint_var(move_follow_up_offsets_pointer)
+                if len(fol_pointers) == 0:
+                    writer.write_uint_var(move_pointers[-1])
+                else:
+                    writer.write_uint_var(move_follow_up_offsets_pointer)
                 writer.write_uint_var(add_prop_offsets_pointer)
                 writer.write_uint8(len(fol_pointers))
                 writer.write_uint8(len(add_prop_pointers))
@@ -253,10 +259,12 @@ def unpack_chp(args, reader):
         export_json(out_folder / "Extracted", cur_name, cfc_json)
 
     export_json(out_folder, "File Information", info_dict)
+    if args.strings: export_json(out_folder, "Strings", com.string_dict)
 
 
 def repack_chp(args, file_info_dict):
     chp_file = chpFile()
+    if args.strings: com.string_dict = {value: int(key) for key, value in import_json(args.path, "Strings").items()}
     chp_file.set_game(game)
     chp_file.header.set_version(file_info_dict["File Version"])
     chp_file.header.write_header(writer)
@@ -299,7 +307,7 @@ def repack_chp(args, file_info_dict):
             writer.write_uint_var(target_pointer)
         hact_set_pointers.append(writer.pos())
         if game.type == com.CFC_GROUPS.DE_CUR:
-            writer.write_uint32(hset.id)
+            writer.write_uint32(int(hset.id))
             writer.write_uint32(hset.sub)
         else:
             writer.write_uint_var(com.string_dict[hset.name])
@@ -368,8 +376,11 @@ parser.add_argument('-gmt', '--motion_gmt', action='store', help='Path to motion
 parser.add_argument('-talk', '--talk_param', action='store', help='Path to motion_gmt.json')
 parser.add_argument('-out', '--output_name', action='store', help='Name of the output file/folder')
 parser.add_argument('-cid', '--cset_id', action='store_true', help='DEBUG: Use CSET ID for sync extraction. For mods that did not correctly assign moveset idx for syncs post-Y6 DE.')
+parser.add_argument('-yaml', '--yaml', action='store_true', help='Use yaml instead of json for command sets')
+parser.add_argument('-strings', '--strings', action='store_true', help='Use strings file for accuracy')
 
 args = parser.parse_args()
+if not args.yaml: args.yaml = False
 com.args = args
 
 try:
@@ -406,8 +417,8 @@ try:
             com.file_names[idx] = file_name
             com.set_id_order[idx] = file_info_dict["File Specific Info"]["Set Order"][file_name]
             com.set_id_name[file_name] = file_info_dict["File Specific Info"]["Set Order"][file_name]
-            print(f"Importing {file_name} json")
-            cur_json = import_json(args.path / json_directory, file_name)
+            print(f"Importing {file_name}")
+            cur_json = import_json(args.path / json_directory, file_name, args.yaml)
             com.file_jsons[file_name] = cur_json
         if file_extension == ".chp":
             repack_chp(args, file_info_dict)

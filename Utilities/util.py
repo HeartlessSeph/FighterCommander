@@ -5,6 +5,7 @@ from pathlib import Path
 import Structure.Enums.common as com
 import cutie
 import re
+import ruamel.yaml
 
 
 class bcolors:
@@ -63,28 +64,43 @@ def map_enum_names_to_bits(mstring, enum):
     return result
 
 
-def export_json(target_path, filename, data):  # Writes a json to a certain directory
+def export_json(target_path, filename, data, is_yaml=False):  # Writes a json to a certain directory
     """
     :param target_path: Path object
     :param filename: String
     :param data: Dictionary
     """
-
+    target_extension = r'.json' if not is_yaml else r'.yaml'
     target_path.mkdir(parents=True, exist_ok=True)
-    jsonFile = json.dumps(data, ensure_ascii=False, indent=2)
-    jsonPath = target_path / (filename + r'.json')
-    jsonPath.write_text(jsonFile, encoding='utf8')
-    print(f"{filename}.json created.")
+    if is_yaml:
+        new_data = json.loads(json.dumps(data))
+        yaml = ruamel.yaml.YAML(typ='safe', pure=True)
+        yaml.sort_base_mapping_type_on_output = False
+        yaml.indent(mapping=2, sequence=5, offset=4)
+        yaml.default_flow_style = False
+        yamlPath = target_path / (filename + r'.yaml')
+        yaml.dump(new_data, yamlPath)
+    else:
+        jsonFile = json.dumps(data, ensure_ascii=False, indent=2)
+        jsonPath = target_path / (filename + r'.json')
+        jsonPath.write_text(jsonFile, encoding='utf8')
+    print(f"{filename}{target_extension} created.")
 
 
-def import_json(target_path, name):  # Goes through a directory, then loads json info into a dict
+def import_json(target_path, name, is_yaml=False):  # Goes through a directory, then loads json info into a dict
     """
     :param target_path: Path Object
     :param name: String
     """
-    import_file = target_path / (name + r'.json')
+    target_extension = r'.json' if not is_yaml else r'.yaml'
+    import_file = target_path / (name + target_extension)
     with import_file.open(encoding='utf8') as input_file:
-        json_array = json.loads(input_file.read())
+        if is_yaml:
+            yaml = ruamel.yaml.YAML(typ='safe')
+            with open(import_file, 'r') as file:
+                json_array = yaml.load(file)
+        else:
+            json_array = json.loads(input_file.read())
         return json_array
 
 
@@ -164,6 +180,14 @@ def val_to_enum(mval: int, menum):
         output = menum(mval).name
     else:
         output = f"LiteralVal[{mval}]"
+    return output
+
+
+def check_literal_val(mval: str):
+    if "literalval" in mval.lower():
+        output = int(re.findall(r'\[(.*?)\]', mval)[0])
+    else:
+        raise Exception("Not a literal val.")
     return output
 
 

@@ -36,6 +36,7 @@ class cfcFile:
 
     def deassign_all_follow_ups(self):
         for command_set in self.command_set_table.command_sets:
+            print(f"De-assigning {command_set.name} string references")
             command_set.deassign_follow_up_names()
         self.command_set_table.deassign_moveset_link_names(self.game)
 
