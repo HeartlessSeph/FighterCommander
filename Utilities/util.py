@@ -169,8 +169,8 @@ def json_scan(mbool, file_name, parent_directory, dict_file):
 def enum_to_val(mval: str, menum):
     if menum.has_name(mval):
         output = menum[mval].value
-    elif "literalval" in mval.lower():
-        output = int(re.findall(r'\[(.*?)\]', mval)[0])
+    elif isinstance(mval, int):
+        output = mval
     else:
         raise Exception(f"{mval} not in {menum.name}!")
     return output
@@ -180,23 +180,7 @@ def val_to_enum(mval: int, menum):
     if menum.has_value(mval):
         output = menum(mval).name
     else:
-        output = f"LiteralVal[{mval}]"
-    return output
-
-
-def check_literal_val(mval: str):
-    if "literalval" in mval.lower():
-        output = int(re.findall(r'\[(.*?)\]', mval)[0])
-    else:
-        raise Exception("Not a literal val.")
-    return output
-
-
-def get_literal_val(mval: str):
-    if "literalval" in mval.lower():
-        output = int(re.findall(r'\[(.*?)\]', mval)[0])
-    else:
-        raise Exception("Not a literal val.")
+        output = mval
     return output
 
 

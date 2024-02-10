@@ -4,8 +4,7 @@ from Structure.Enums.common import CFC_GROUPS, GameEngine
 from Types.battle.Default.Enums.conditions import *
 from Utilities.bin_reader import BinaryReader
 from Utilities.util import map_enum_names_to_bits, get_set_bits_as_enum, merge_two_dicts
-from Utilities.util import val_to_enum, enum_to_val, get_literal_val
-import cutie
+from Utilities.util import val_to_enum, enum_to_val
 
 
 class CommandTrigger(IntEnum):
@@ -549,10 +548,10 @@ class Custom(generic_prop):
         buffer = BinaryReader()
         buffer.set_engine(game.engine)
 
-        if "literalval" not in prop_dict["String"].lower():
+        if not isinstance(prop_dict["String"], int):
             buffer.write_uint32(com.string_dict[prop_dict["String"]])
         else:
-            buffer.write_uint32(get_literal_val(prop_dict["String"]))
+            buffer.write_uint32(prop_dict["String"])
 
         if game.engine == com.GameEngine.DE: buffer.write_uint32(0)
         return buffer
@@ -565,15 +564,12 @@ class Custom(generic_prop):
             prop_dict = {"String": com.string_dict[string_pointer]}
         else:
             print(f"Property string (offset {str(hex(string_pointer))}) not present in string list.")
-            if cutie.prompt_yes_or_no("Continue? Output will be LiteralVal."):
-                prop_dict = {"String": f"LiteralVal[{string_pointer}]"}
-            else:
-                raise Exception("User has chosen to cancel extraction.")
+            prop_dict = {"String": string_pointer}
         return prop_dict
 
     @staticmethod
     def parse_strings(prop_dict, game):
-        if "literalval" not in prop_dict["String"].lower():
+        if not isinstance(prop_dict["String"], int):
             com.string_dict[prop_dict["String"]] = 0
 
 

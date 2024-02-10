@@ -84,7 +84,7 @@ class command_set_table:
             for moveset in command_set.movesets:
                 if moveset.name is None:
                     if moveset.id not in command_set_dict2:
-                        moveset.name = f"LiteralVal[{moveset.id}]"
+                        moveset.name = moveset.id
                     else:
                         moveset.name = command_set_dict2[moveset.id]
 
@@ -97,8 +97,8 @@ class command_set_table:
                 move.battle_mode.prop_class.idx_to_name(move.battle_mode.prop_dict, command_set_dict)
             for moveset in command_set.movesets:
                 if game.type in [CFC_GROUPS.DE_CUR, CFC_GROUPS.DE_K2]:
-                    if "literalval" in moveset.name.lower():
-                        moveset.id = int(re.findall(r'\[(.*?)\]', moveset.name)[0])
+                    if isinstance(moveset.name, int):
+                        moveset.id = moveset.name
                     else:
                         moveset.id = command_set_dict2[moveset.name]
                 else:
