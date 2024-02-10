@@ -1,10 +1,11 @@
 from Structure.Enums.common import CFC_GROUPS, GameEngine
 from Structure.CFC.Follow_up import follow_up
-from Types.battle.moves import battle_mode
+import importlib
 
 
 class move:
     def __init__(self):
+
         self.name = None
         self.offset = None
         self.type = None
@@ -22,9 +23,21 @@ class move:
         self.num_follow_ups = None
         self.follow_up_offset = None
 
-        self.battle_mode = battle_mode()
+        self.battle_mode = None
+
+    def set_battle_mode(self, game_name: str = "Default"):
+        module_instance = None
+        try:
+            module_instance = importlib.import_module(f"Types.battle.{game_name}.moves")
+        except ImportError:
+            # print(f"No module exists for Types.battle.{game_name}.moves")
+            module_instance = importlib.import_module("Types.battle.Default.moves")
+
+        cur_class = module_instance.battle_mode()
+        self.battle_mode = cur_class
 
     def read_move(self, buffer, game):
+        self.set_battle_mode(game.key)
         self.offset = buffer.pos()
         buffer.seek(buffer.read_uint_var())
         self.name = buffer.read_str()
@@ -96,6 +109,7 @@ class move:
 
     def parse_json(self, mjson, game):
         self.type = mjson["Move Type"]
+        self.set_battle_mode(game.key)
         self.battle_mode.set_mode(self.type)
         self.battle_mode.set_game(game)
         self.battle_mode.set_dict(mjson)

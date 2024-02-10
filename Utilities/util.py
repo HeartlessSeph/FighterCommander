@@ -6,6 +6,7 @@ import Structure.Enums.common as com
 import cutie
 import re
 import ruamel.yaml
+from enum import Enum, IntEnum
 
 
 class bcolors:
@@ -204,3 +205,23 @@ def parse_path_relativity(mval: str, base_path):
         return Path(mval)
     else:
         return base_path / mval
+
+
+class base_enum(Enum):
+    @classmethod
+    def has_value(cls, value):
+        return value in cls._value2member_map_
+
+    @classmethod
+    def has_name(cls, ename):
+        return ename in cls.__members__
+
+
+class base_enum_int(IntEnum):
+    @classmethod
+    def has_value(cls, value):
+        return value in cls._value2member_map_
+
+    @classmethod
+    def has_name(cls, ename):
+        return ename in cls.__members__

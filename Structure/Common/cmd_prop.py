@@ -1,7 +1,7 @@
 from binary_reader import Whence, Endian
 from Utilities.bin_reader import BinaryReader
 from Structure.Enums.common import GameEngine
-from Types.battle.properties import battle_command
+import importlib
 
 
 class cmd_property:
@@ -28,9 +28,20 @@ class cmd_property:
         buffer_1.seek(0)
         return buffer_1, buffer_2
 
+    def set_condition(self, game_name: str = "Default"):
+        module_instance = None
+        try:
+            module_instance = importlib.import_module(f"Types.battle.{game_name}.conditions")
+        except ImportError:
+            # print(f"No module exists for Types.battle.{game_name}.conditions")
+            module_instance = importlib.import_module("Types.battle.Default.conditions")
+
+        cur_class = module_instance.battle_command()
+        return cur_class
+
     def read_property(self, buffer, game):
         buffer_1, buffer_2 = self.split_prop_buffer(buffer, game)
-        cmd_trigger = battle_command()
+        cmd_trigger = self.set_condition(game.key)
         cmd_trigger.set_buffers(buffer_1, buffer_2)
         cmd_trigger.get_buffer_property()
         cmd_trigger.set_game(game)
@@ -46,7 +57,7 @@ class cmd_property:
 
     def parse_json(self, mjson, game, idx):
         self.idx = idx
-        cmd_trigger = battle_command()
+        cmd_trigger = self.set_condition(game.key)
         cmd_trigger.set_dict(mjson)
         cmd_trigger.get_dict_property()
         cmd_trigger.set_game(game)
