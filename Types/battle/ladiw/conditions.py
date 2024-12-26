@@ -289,7 +289,10 @@ class FighterStatus(generic_prop):
     def write_property(prop_dict, game):
         buffer = BinaryReader()
         buffer.set_engine(game.engine)
-        state = enum_to_val(prop_dict["State Type"], Status)
+        try:
+            state = enum_to_val(prop_dict["State Type"], Status)
+        except:
+            state = 0
         conditional = map_enum_names_to_bits(prop_dict["Conditionals"], Conditionals)
 
         buffer.write_uint8(state)
