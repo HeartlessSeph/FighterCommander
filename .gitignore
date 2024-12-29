@@ -1,0 +1,4 @@
+#python cache
+*.pyc
+img*
+__pycache
