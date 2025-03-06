@@ -49,7 +49,7 @@ def unpack_cfc(args, reader):
 
 
 def repack_cfc():
-    # TODO: Clean this code up, it's a mess
+    # TODO: Clean this code up, it's a mess (Probably not happening)
     cfc_file = cfcFile()
     if args.strings: com.string_dict = {value: int(key) for key, value in import_json(args.path, "Strings").items()}
     cfc_file.set_game(game)
@@ -90,7 +90,7 @@ def repack_cfc():
 
             anim_table_offsets = []
             move_json = cmove.battle_mode.prop_dict
-            cmove_buffer = cmove.battle_mode.prop_class.write_property(move_json, game)
+            cmove_buffer, unk_animtable_val = cmove.battle_mode.prop_class.write_property(move_json, game)
             cmove_buffer.seek(0)
             if cmove_buffer.size() > (4 * game.engine):
                 while cmove_buffer.pos() < cmove_buffer.size():
@@ -109,9 +109,8 @@ def repack_cfc():
             if len(anim_table_offsets) > 0:
                 anim_val = writer.pos()
                 if game.engine == com.GameEngine.DE: writer.write_uint_var(anim_tables_pointer)
-                # The below is generally 0. In the original program, I wrote it as 1 if the following games for whatever reason.
-                # unk_val = int(game.type in [com.CFC_GROUPS.OE_Y5, com.CFC_GROUPS.OE_ISHIN])
-                writer.write_uint8(0)
+                # I originally had the below as 0 but LADPIH seems to have it different sometimes
+                writer.write_uint8(unk_animtable_val)
                 writer.write_uint8(len(anim_table_offsets))
                 writer.write_uint16(0)
                 if game.engine == com.GameEngine.OE: writer.write_uint_var(anim_tables_pointer)
@@ -126,7 +125,7 @@ def repack_cfc():
                 writer.write_uint_var(add_prop_pointer)
 
             move_pointers.append(writer.pos())
-            writer.write_uint_var(com.string_dict[cmove.name])
+            writer.write_uint_var(com.string_dict[cmove.name.split("[DUPLICATE")[0]])
             if game.engine == com.GameEngine.DE:
                 writer.write_uint_var(anim_val)
                 if len(fol_pointers) == 0:

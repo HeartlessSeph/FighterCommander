@@ -97,6 +97,14 @@ class move:
         self.type = buffer.read_uint8()
 
     def build_json(self, mjson):
+        if "Move Table" in mjson:
+            cur_name = self.name
+            my_enumerator = 0
+            while cur_name in mjson["Move Table"]:
+                cur_name = f"{self.name}[DUPLICATE-{my_enumerator}]"
+                if cur_name not in mjson["Move Table"]:
+                    self.name = cur_name
+
         mjson["Move Table"][self.name] = self.battle_mode.prop_dict
 
         for idx, follow_up in enumerate(self.follow_ups):
@@ -104,8 +112,8 @@ class move:
 
         for idx, add_prop in enumerate(self.add_props):
             idx_str = "Property " + str(idx + 1)
-            mjson["Move Table"][self.name]["Properties"][idx_str]["Unk Short 1"] = add_prop & 0xFF
-            mjson["Move Table"][self.name]["Properties"][idx_str]["Unk Short 2"] = (add_prop & 0xFF00) >> 8
+            mjson["Move Table"][self.name]["Properties"][idx_str]["Unk Short 1"] = add_prop & 0xFFFF
+            mjson["Move Table"][self.name]["Properties"][idx_str]["Unk Short 2"] = (add_prop & 0xFFFF0000) >> 16
 
     def parse_json(self, mjson, game):
         self.type = mjson["Move Type"]
@@ -127,5 +135,5 @@ class move:
                 self.follow_ups.append(cur_follow_up)
         if "Properties" in mjson:
             for mprop in mjson["Properties"].keys():
-                prop_val = mjson["Properties"][mprop]["Unk Short 1"] + (mjson["Properties"][mprop]["Unk Short 2"] << 8)
+                prop_val = mjson["Properties"][mprop]["Unk Short 1"] + (mjson["Properties"][mprop]["Unk Short 2"] << 16)
                 self.add_props.append(prop_val)

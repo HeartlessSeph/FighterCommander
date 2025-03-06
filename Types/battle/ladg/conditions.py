@@ -69,19 +69,30 @@ class CommandTrigger(IntEnum):
 
 CommandTriggerNames = \
     {
-        "invalid": "invalid", "ButtonPush": "Button Press", "ButtonNow": "Button Hold", "MotionShift": "Follow Up Window Start",
-        "MotionEnd": "Follow Up Window End", "FighterStatus": "Fighter Status", "ButtonCommand": "Button Press (Buffered Input)",
-        "AttackHit": "Follow Up On Hit", "Outer": "Outer", "Lever": "Analog Deadzone", "Weapon": "Weapon Category", "HAct": "Heat Action",
-        "DistLimit": "Distance Limit", "AngLimit": "Angle Limit", "TargetStatus": "Target Status", "TargetChange": "Target Change",
+        "invalid": "invalid", "ButtonPush": "Button Press", "ButtonNow": "Button Hold",
+        "MotionShift": "Follow Up Window Start",
+        "MotionEnd": "Follow Up Window End", "FighterStatus": "Fighter Status",
+        "ButtonCommand": "Button Press (Buffered Input)",
+        "AttackHit": "Follow Up On Hit", "Outer": "Outer", "Lever": "Analog Deadzone", "Weapon": "Weapon Category",
+        "HAct": "Heat Action",
+        "DistLimit": "Distance Limit", "AngLimit": "Angle Limit", "TargetStatus": "Target Status",
+        "TargetChange": "Target Change",
         "Range": "Range", "WeaponID": "Weapon ID", "Height": "Height", "LeverAng": "Analog Direction", "Tame": "Charge",
-        "ChangeAuth": "Change Auth", "DirParam": "Quickstep", "Skill": "Skill Required", "HaveItem": "Have Item", "CtrlType": "Ctrl Type",
-        "AttackFrame": "Timing", "Pickup": "Pickup", "ButtonRenda": "Button Renda", "ComboNum": "Combo Number", "SyncRole": "Sync Role",
+        "ChangeAuth": "Change Auth", "DirParam": "Quickstep", "Skill": "Skill Required", "HaveItem": "Have Item",
+        "CtrlType": "Ctrl Type",
+        "AttackFrame": "Timing", "Pickup": "Pickup", "ButtonRenda": "Button Renda", "ComboNum": "Combo Number",
+        "SyncRole": "Sync Role",
         "Custom": "Custom", "ComboSpeed": "Combo Speed", "BattleStyle": "Battle Style", "GearLevel": "Heat Gear Level",
-        "HeightParam": "Height Param", "DamageHit": "Damage Hit", "MotionID": "Motion ID", "Stun": "Stun", "HeatLevel": "Heat Level",
-        "PushFighter": "Push Fighter", "RangeID": "Range ID", "PickupNarrow": "Pickup Narrow", "ChargeTime": "Charge Time",
-        "ChargeLevel": "Charge Level", "BuffStyle": "Buff Style", "PlayerSkill": "Player Skill", "ChargeType": "Charge Type",
-        "HActNotUsed": "Hact not used", "ReactionType": "Reaction Type", "ItemBuff": "Item Buff", "DistArea": "Dist Area",
-        "DefenceSuccess": "Defence Success", "SkillSuccess": "Skill Success", "SkillFailed": "Skill Failed", "PlayerID": "Player ID", "num": "Num"
+        "HeightParam": "Height Param", "DamageHit": "Damage Hit", "MotionID": "Motion ID", "Stun": "Stun",
+        "HeatLevel": "Heat Level",
+        "PushFighter": "Push Fighter", "RangeID": "Range ID", "PickupNarrow": "Pickup Narrow",
+        "ChargeTime": "Charge Time",
+        "ChargeLevel": "Charge Level", "BuffStyle": "Buff Style", "PlayerSkill": "Player Skill",
+        "ChargeType": "Charge Type",
+        "HActNotUsed": "Hact not used", "ReactionType": "Reaction Type", "ItemBuff": "Item Buff",
+        "DistArea": "Dist Area",
+        "DefenceSuccess": "Defence Success", "SkillSuccess": "Skill Success", "SkillFailed": "Skill Failed",
+        "PlayerID": "Player ID", "num": "Num"
     }
 
 
@@ -370,7 +381,7 @@ class WeaponID(generic_prop):
         elif game.engine == GameEngine.DE:
             prop_dict["Weapon ID"] = weapon_id
         return prop_dict
-    
+
     @staticmethod
     def parse_strings(prop_dict, game):
         if game.engine == com.GameEngine.OE:

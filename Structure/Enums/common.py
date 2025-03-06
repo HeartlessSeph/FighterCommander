@@ -17,7 +17,8 @@ LAD_GAME_BACKWARDS = {
     'je': 'Judgment',
     'lj': 'Lost Judgment',
     'ladg': 'Like a Dragon Gaiden',
-    'ladiw': 'Like a Dragon Infinite Wealth'
+    'ladiw': 'Like a Dragon Infinite Wealth',
+    'ladpih': 'Like a Dragon Pirates in Hawaii'
 }
 
 LAD_GROUP = {
@@ -30,10 +31,11 @@ LAD_GROUP = {
     'y6': 4,
     'yk2': 5,
     'je': 6,
-    'y7': 6,
     'lj': 6,
     'ladg': 6,
-    'ladiw': 6
+    'ladiw': 6,
+    'y7': 6,
+    'ladpih': 6
 }
 
 

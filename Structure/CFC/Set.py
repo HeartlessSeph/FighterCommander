@@ -103,8 +103,9 @@ class command_set:
         if "Move Table" in mjson:
             for mmove in mjson["Move Table"].keys():
                 cur_move = move()
+                cur_move_name = mmove.split("[DUPLICATE")[0]
                 cur_move.name = mmove
-                com.string_dict[mmove] = 0
+                com.string_dict[cur_move_name] = 0
                 cur_move.parse_json(mjson["Move Table"][mmove], game)
                 self.moves.append(cur_move)
         if "Moveset Change Table" in mjson:

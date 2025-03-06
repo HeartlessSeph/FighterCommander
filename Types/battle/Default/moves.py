@@ -128,10 +128,13 @@ class generic_prop:
     def write_property(mjson, game):
         buffer = BinaryReader()
         buffer.set_engine(game.engine)
+        unk_val = 0
 
         if "Animation Used" in mjson:
             buffer.write_uint_var(com.string_dict[mjson["Animation Used"]])
         if "Animation Table" in mjson:
+            unk_val = mjson["Animation Table"]["Unknown Value"]
+            mjson["Animation Table"].pop("Unknown Value")
             for anim in mjson["Animation Table"].keys():
                 cur_anim = mjson["Animation Table"][anim]["Animation Used"]
                 buffer.write_uint_var(com.string_dict[cur_anim])
@@ -148,7 +151,7 @@ class generic_prop:
                             buffer.write_uint32(0)
                     else:
                         buffer.write_uint32(mjson["Animation Table"][anim]["Motion ID"])
-        return buffer
+        return buffer, unk_val
 
     @staticmethod
     def read_property(buffer, game, a_val, a_bool):
@@ -171,6 +174,7 @@ class generic_prop:
             offsetter = 4 * game.engine
             for i in range(num_anims):
                 anim_idx = "Animation " + str(i + 1)
+                move_dict["Animation Table"]["Unknown Value"] = unk_val
                 move_dict["Animation Table"][anim_idx] = {}
 
                 buffer.seek(anim_table_offset + (i * offsetter))
@@ -195,6 +199,7 @@ class generic_prop:
             com.string_dict[mjson["Animation Used"]] = 0
         if "Animation Table" in mjson:
             for anim in mjson["Animation Table"].keys():
+                if anim == "Unknown Value": continue
                 com.string_dict[mjson["Animation Table"][anim]["Animation Used"]] = 0
 
 
@@ -219,7 +224,7 @@ class Change(generic_prop):
                     buffer.write_uint32(0)
             else:
                 buffer.write_uint32(0)
-        return buffer
+        return buffer, 0
 
     @staticmethod
     def read_property(buffer, game, a_val, a_bool):
@@ -252,7 +257,7 @@ class CustomAction(generic_prop):
 
         buffer.write_uint_var(mjson["Unknown Value"])
 
-        return buffer
+        return buffer, 0
 
     @staticmethod
     def read_property(buffer, game, a_val, a_bool):

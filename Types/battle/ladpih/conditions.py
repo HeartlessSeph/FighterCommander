@@ -1,98 +1,161 @@
-from enum import IntEnum
+from enum import Enum, IntEnum, Flag
+from typing import List
 import Structure.Enums.common as com
 from Structure.Enums.common import CFC_GROUPS, GameEngine
-from Types.battle.lj.Enums.conditions import *
+from Types.battle.ladpih.Enums.conditions import *
+from binary_reader import Whence, Endian
 from Utilities.bin_reader import BinaryReader
 from Utilities.util import map_enum_names_to_bits, get_set_bits_as_enum, merge_two_dicts
 from Utilities.util import val_to_enum, enum_to_val
 
 
 class CommandTrigger(IntEnum):
-    invalid = 0
-    ButtonPush = 1
-    ButtonNow = 2
-    MotionShift = 3
-    MotionEnd = 4
-    FighterStatus = 5
-    ButtonCommand = 6
-    AttackHit = 7
-    Outer = 8
-    Lever = 9
-    Weapon = 10
-    HAct = 11
-    DistLimit = 12
-    AngLimit = 13
-    TargetStatus = 14
-    TargetChange = 15
-    Range = 16
-    WeaponID = 17
-    Height = 18
-    LeverAng = 19
-    Tame = 20
-    ChangeAuth = 21
-    DirParam = 22
-    Skill = 23
-    HaveItem = 24
-    CtrlType = 25
-    AttackFrame = 26
-    Pickup = 27
-    ButtonRenda = 28
-    ComboNum = 29
-    SyncRole = 30
-    Custom = 31
-    ComboSpeed = 32
-    BattleStyle = 33
-    GearLevel = 34
-    HeightParam = 35
-    DamageHit = 36
-    MotionID = 37
-    Stun = 38
-    HeatLevel = 39
-    PushFighter = 40
-    RangeID = 41
-    PickupNarrow = 42
-    ChargeTime = 43
-    ChargeLevel = 44
-    BuffStyle = 45
-    PlayerSkill = 46
-    ChargeType = 47
-    HActNotUsed = 48
-    ReactionType = 49
-    ItemBuff = 50
-    DistArea = 51
-    DefenceSuccess = 52
-    SkillSuccess = 53
-    SkillFailed = 54
-    PlayerID = 55
-    num = 56
+    invalid = 0,
+    ButtonPush = 1,
+    ButtonNow = 2,
+    ButtonRenda = 3,
+    ButtonCommand = 4,
+    MotionShift = 5,
+    MotionEnd = 6,
+    FighterStatus = 7,
+    TargetStatus = 8,
+    TargetChange = 9,
+    Custom = 10,
+    AttackHit = 11,
+    Outer = 12,
+    Lever = 13,
+    Weapon = 14,
+    WeaponID = 15,
+    HaveItem = 16,
+    HAct = 17,
+    HActNotUsed = 18,
+    DistLimit = 19,
+    AngLimit = 20,
+    Range = 21,
+    Height = 22,
+    LeverAng = 23,
+    Tame = 24,
+    ChangeAuth = 25,
+    DirParam = 26,
+    Skill = 27,
+    CtrlType = 28,
+    PlayerID = 29,
+    AttackFrame = 30,
+    Pickup = 31,
+    ComboNum = 32,
+    SyncRole = 33,
+    ComboSpeed = 34,
+    BattleStyle = 35,
+    HeatLevel = 36,
+    HeightParam = 37,
+    MotionID = 38,
+    Stun = 39,
+    PushFighter = 40,
+    RangeID = 41,
+    ChargeTime = 42,
+    ChargeLevel = 43,
+    ChargeType = 44,
+    PlayerSkill = 45,
+    ReactionType = 46,
+    ItemBuff = 47,
+    DistArea = 48,
+    SkillSuccess = 49,
+    SkillFailed = 50,
+    SyncNode = 51,
+    WallHit = 52,
+    AiCustomEventFlag = 53,
+    AiOpenActionFlag = 54,
+    Debug = 55,
+    LCASuccess = 56,
+    SpeedUpBuff = 57,
+    HeightScale = 58,
+    PickupNarrow = 59,
+    DamageHit = 60,
+    DefenceSuccess = 61,
+    BoxSkill = 62,
+    BoxDownValue = 63,
+    TougijoSkill = 64,
+    GadgetAvailable = 65,
+    GadgetLv = 66,
+    ForceDisable = 67,
+    WeaponL = 68,
+    WeaponR = 69,
+    CommandLoopNum = 70
 
 
 CommandTriggerNames = \
     {
-        "invalid": "invalid", "ButtonPush": "Button Press", "ButtonNow": "Button Hold",
-        "MotionShift": "Follow Up Window Start",
-        "MotionEnd": "Follow Up Window End", "FighterStatus": "Fighter Status",
+        "invalid": "invalid",
+        "ButtonPush": "Button Press",
+        "ButtonNow": "Button Hold",
+        "ButtonRenda": "Button Renda",
         "ButtonCommand": "Button Press (Buffered Input)",
-        "AttackHit": "Follow Up On Hit", "Outer": "Outer", "Lever": "Analog Deadzone", "Weapon": "Weapon Category",
-        "HAct": "Heat Action",
-        "DistLimit": "Distance Limit", "AngLimit": "Angle Limit", "TargetStatus": "Target Status",
+        "MotionShift": "Follow Up Window Start",
+        "MotionEnd": "Follow Up Window End",
+        "FighterStatus": "Fighter Status",
+        "TargetStatus": "Target Status",
         "TargetChange": "Target Change",
-        "Range": "Range", "WeaponID": "Weapon ID", "Height": "Height", "LeverAng": "Analog Direction", "Tame": "Charge",
-        "ChangeAuth": "Change Auth", "DirParam": "Quickstep", "Skill": "Skill Required", "HaveItem": "Have Item",
+        "Custom": "Custom",
+        "AttackHit": "Follow Up On Hit",
+        "Outer": "Outer",
+        "Lever": "Analog Deadzone",
+        "Weapon": "Weapon Category",
+        "WeaponID": "Weapon ID",
+        "HaveItem": "Have Item",
+        "HAct": "Heat Action",
+        "HActNotUsed": "Hact not used",
+        "DistLimit": "Distance Limit",
+        "AngLimit": "Angle Limit",
+        "Range": "Range",
+        "Height": "Height",
+        "LeverAng": "Analog Direction",
+        "Tame": "Charge",
+        "ChangeAuth": "Change Auth",
+        "DirParam": "Quickstep",
+        "Skill": "Skill Required",
         "CtrlType": "Ctrl Type",
-        "AttackFrame": "Timing", "Pickup": "Pickup", "ButtonRenda": "Button Renda", "ComboNum": "Combo Number",
+        "PlayerID": "Player ID",
+        "AttackFrame": "Timing",
+        "Pickup": "Pickup",
+        "ComboNum": "Combo Number",
         "SyncRole": "Sync Role",
-        "Custom": "Custom", "ComboSpeed": "Combo Speed", "BattleStyle": "Battle Style", "GearLevel": "Heat Gear Level",
-        "HeightParam": "Height Param", "DamageHit": "Damage Hit", "MotionID": "Motion ID", "Stun": "Stun",
+        "ComboSpeed": "Combo Speed",
+        "BattleStyle": "Battle Style",
         "HeatLevel": "Heat Level",
-        "PushFighter": "Push Fighter", "RangeID": "Range ID", "PickupNarrow": "Pickup Narrow",
+        "HeightParam": "Height Param",
+        "MotionID": "Motion ID",
+        "Stun": "Stun",
+        "PushFighter": "Push Fighter",
+        "RangeID": "Range ID",
         "ChargeTime": "Charge Time",
-        "ChargeLevel": "Charge Level", "BuffStyle": "Buff Style", "PlayerSkill": "Player Skill",
+        "ChargeLevel": "Charge Level",
         "ChargeType": "Charge Type",
-        "HActNotUsed": "Hact not used", "ReactionType": "Reaction Type", "ItemBuff": "Item Buff",
+        "PlayerSkill": "Player Skill",
+        "ReactionType": "Reaction Type",
+        "ItemBuff": "Item Buff",
         "DistArea": "Dist Area",
-        "DefenceSuccess": "Defence Success", "SkillSuccess": "Skill Success", "SkillFailed": "Skill Failed",
-        "PlayerID": "Player ID", "num": "Num"
+        "SkillSuccess": "Skill Success",
+        "SkillFailed": "Skill Failed",
+        "SyncNode": "Sync Node",
+        "WallHit": "Wall Hit",
+        "AiCustomEventFlag": "Ai Custom Event Flag",
+        "AiOpenActionFlag": "Ai Open Action Flag",
+        "Debug": "Debug",
+        "LCASuccess": "LCA Success",
+        "SpeedBuff": "Speed Buff",
+        "HeightScale": "Height Scale",
+        "PickupNarrow" : "PickupNarrow",
+        "DamageHit" : "DamageHit",
+        "DefenceSuccess" : "DefenceSuccess",
+        "BoxSkill" : "BoxSkill",
+        "BoxDownValue" : "BoxDownValue",
+        "TougijoSkill" : "TougijoSkill",
+        "GadgetAvailable" : "GadgetAvailable",
+        "GadgetLv" : "GadgetLv",
+        "ForceDisable" : "ForceDisable",
+        "WeaponL" : "WeaponL",
+        "WeaponR" : "WeaponR",
+        "CommandLoopNum" : "CommandLoopNum"
     }
 
 
@@ -203,33 +266,40 @@ class ButtonPush(generic_prop):
         buffer = BinaryReader()
         buffer.set_engine(game.engine)
 
-        if game.engine == com.GameEngine.OE:
-            button_val = map_enum_names_to_bits(prop_dict["Button Press"], ButtonsOE)
-        else:
-            button_val = map_enum_names_to_bits(prop_dict["Button Press"], ButtonsDE)
+        button_val = map_enum_names_to_bits(prop_dict["Button Press"], ButtonsDE)
 
         conditionals = map_enum_names_to_bits(prop_dict["Conditionals"], Conditionals)
         additional_conditional = prop_dict["Additional Conditional"]
 
+        unk_val1 = prop_dict["Unk Value 1"]
+        unk_val2 = prop_dict["Unk Value 2"]
+        unk_val3 = prop_dict["Unk Value 3"]
+        unk_val4 = prop_dict["Unk Value 4"]
+
         buffer.write_uint16(button_val)
         buffer.write_uint8(additional_conditional)
         buffer.write_uint8(conditionals)
-        if game.engine == com.GameEngine.DE: buffer.write_uint32(0)
+        buffer.write_uint8(unk_val1)
+        buffer.write_uint8(unk_val2)
+        buffer.write_uint8(unk_val3)
+        buffer.write_uint8(unk_val4)
         return buffer
 
     @staticmethod
     def read_property(buffer1, buffer2, game):
         buffer1.seek(0)
+        buffer2.seek(0)
         prop_dict = {}
         ButtonPress = buffer1.read_uint8() + (buffer1.read_uint8() << 0x8)
         AdditionalConditional = buffer1.read_uint8()
         conditional = buffer1.read_uint8()
-        if buffer2 is not None:
-            prop_dict["Button Press"] = get_set_bits_as_enum(ButtonPress, ButtonsDE)
-        else:
-            prop_dict["Button Press"] = get_set_bits_as_enum(ButtonPress, ButtonsOE)
+        prop_dict["Button Press"] = get_set_bits_as_enum(ButtonPress, ButtonsDE)
         prop_dict["Conditionals"] = get_set_bits_as_enum(conditional, Conditionals)
         prop_dict["Additional Conditional"] = AdditionalConditional
+        prop_dict["Unk Value 1"] = buffer2.read_uint8()
+        prop_dict["Unk Value 2"] = buffer2.read_uint8()
+        prop_dict["Unk Value 3"] = buffer2.read_uint8()
+        prop_dict["Unk Value 4"] = buffer2.read_uint8()
         return prop_dict
 
 
